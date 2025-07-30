@@ -534,10 +534,38 @@ Type your scraping requests naturally, like:
             
             self.console.print(section_table)
         
-        # Option to modify settings
-        modify = Confirm.ask("\n[cyan]Modify settings?[/cyan]", default=False)
-        if modify:
-            self.console.print("[yellow]Configuration modification not implemented in this demo.[/yellow]")
+        # Configuration management options
+        self.console.print("\n[bold cyan]Configuration Management Options:[/bold cyan]")
+        config_menu = Table(show_header=False, box=box.SIMPLE)
+        config_menu.add_column("Option", style="cyan", width=3)
+        config_menu.add_column("Description", style="white")
+        
+        config_menu.add_row("1", "🔧 Modify Scraper Settings")
+        config_menu.add_row("2", "🧠 Manage Schema Recipes")
+        config_menu.add_row("3", "📏 Set Quality Thresholds")
+        config_menu.add_row("4", "💾 Save Configuration")
+        config_menu.add_row("5", "🔄 Reset to Defaults")
+        config_menu.add_row("6", "🔙 Back to Main Menu")
+        
+        self.console.print(config_menu)
+        
+        choice = Prompt.ask(
+            "\n[bold cyan]Choose an option[/bold cyan]",
+            choices=["1", "2", "3", "4", "5", "6"],
+            default="6"
+        )
+        
+        if choice == "1":
+            self._modify_scraper_settings()
+        elif choice == "2":
+            self._manage_schema_recipes()
+        elif choice == "3":
+            self._set_quality_thresholds()
+        elif choice == "4":
+            self._save_configuration()
+        elif choice == "5":
+            self._reset_to_defaults()
+        # choice == "6" returns to main menu
     
     def _show_tool_information(self):
         """Display tool information and statistics."""
@@ -670,6 +698,467 @@ Items below the quality threshold are filtered out automatically.
             self.console.print(f"[green]✅ Session history saved to {filename}[/green]")
         except Exception as e:
             self.console.print(f"[red]❌ Failed to save history: {e}[/red]")
+    
+    def _modify_scraper_settings(self):
+        """Modify scraper configuration settings."""
+        self.console.print("\n[bold green]🔧 Modify Scraper Settings[/bold green]")
+        
+        settings_table = Table(show_header=False, box=box.SIMPLE)
+        settings_table.add_column("Option", style="cyan", width=3)
+        settings_table.add_column("Setting", style="white", width=25)
+        settings_table.add_column("Current Value", style="yellow")
+        
+        scraper_config = self.config["scraper"]
+        modifiable_settings = [
+            ("1", "request_delay", "Request delay between pages (seconds)"),
+            ("2", "timeout", "Request timeout (seconds)"),
+            ("3", "max_pages", "Maximum pages to scrape"),
+            ("4", "max_results", "Maximum results to return"),
+            ("5", "min_quality_score", "Minimum quality score (0-100)"),
+            ("6", "user_agent", "User agent string"),
+            ("7", "respect_robots_txt", "Respect robots.txt (true/false)"),
+            ("8", "enable_rate_limiting", "Enable rate limiting (true/false)")
+        ]
+        
+        for option, key, description in modifiable_settings:
+            current_value = str(scraper_config.get(key, "Not set"))
+            settings_table.add_row(option, description, current_value)
+        
+        settings_table.add_row("9", "Back to Configuration Menu", "")
+        
+        self.console.print(settings_table)
+        
+        choice = Prompt.ask(
+            "\n[cyan]Which setting would you like to modify?[/cyan]",
+            choices=[str(i) for i in range(1, 10)],
+            default="9"
+        )
+        
+        if choice == "9":
+            return
+        
+        # Get the setting to modify
+        setting_key = modifiable_settings[int(choice) - 1][1]
+        setting_desc = modifiable_settings[int(choice) - 1][2]
+        current_value = scraper_config.get(setting_key)
+        
+        self.console.print(f"\n[bold]Modifying:[/bold] {setting_desc}")
+        self.console.print(f"[dim]Current value: {current_value}[/dim]")
+        
+        # Get new value based on setting type
+        if setting_key in ["respect_robots_txt", "enable_rate_limiting"]:
+            new_value = Confirm.ask(f"[cyan]New value for {setting_key}[/cyan]", default=current_value)
+        elif setting_key in ["request_delay", "timeout", "min_quality_score"]:
+            new_value_str = Prompt.ask(f"[cyan]New value for {setting_key}[/cyan]", default=str(current_value))
+            try:
+                new_value = float(new_value_str)
+            except ValueError:
+                self.console.print("[red]Invalid numeric value.[/red]")
+                return
+        elif setting_key in ["max_pages", "max_results"]:
+            new_value_str = Prompt.ask(f"[cyan]New value for {setting_key}[/cyan]", default=str(current_value))
+            try:
+                new_value = int(new_value_str)
+            except ValueError:
+                self.console.print("[red]Invalid integer value.[/red]")
+                return
+        else:  # String values like user_agent
+            new_value = Prompt.ask(f"[cyan]New value for {setting_key}[/cyan]", default=str(current_value))
+        
+        # Update the configuration
+        self.config["scraper"][setting_key] = new_value
+        
+        # Update the scraper tool configuration
+        try:
+            self.scraper_tool.update_config(**{setting_key: new_value})
+            self.console.print(f"[green]✅ Updated {setting_key} to {new_value}[/green]")
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to update setting: {e}[/red]")
+    
+    def _manage_schema_recipes(self):
+        """Manage schema recipes for different scraping scenarios."""
+        self.console.print("\n[bold green]🧠 Manage Schema Recipes[/bold green]")
+        
+        # Initialize schema recipes storage if not exists
+        if "schema_recipes" not in self.config:
+            self.config["schema_recipes"] = {}
+        
+        recipes = self.config["schema_recipes"]
+        
+        if not recipes:
+            self.console.print("[yellow]No schema recipes found.[/yellow]")
+        else:
+            # Display existing recipes
+            recipes_table = Table(title="Saved Schema Recipes", box=box.ROUNDED)
+            recipes_table.add_column("Name", style="cyan")
+            recipes_table.add_column("Description", style="white")
+            recipes_table.add_column("Fields", style="green")
+            
+            for name, recipe in recipes.items():
+                field_count = len(recipe.get("fields", {}))
+                description = recipe.get("description", "No description")
+                recipes_table.add_row(name, description, str(field_count))
+            
+            self.console.print(recipes_table)
+        
+        # Schema management options
+        schema_menu = Table(show_header=False, box=box.SIMPLE)
+        schema_menu.add_column("Option", style="cyan", width=3)
+        schema_menu.add_column("Description", style="white")
+        
+        schema_menu.add_row("1", "📝 Create New Schema Recipe")
+        schema_menu.add_row("2", "👁️  View Schema Recipe Details")
+        schema_menu.add_row("3", "🗑️  Delete Schema Recipe")
+        schema_menu.add_row("4", "📋 Export Schema Recipe")
+        schema_menu.add_row("5", "📥 Import Schema Recipe")
+        schema_menu.add_row("6", "🔙 Back to Configuration Menu")
+        
+        self.console.print(schema_menu)
+        
+        choice = Prompt.ask(
+            "\n[cyan]Choose an option[/cyan]",
+            choices=["1", "2", "3", "4", "5", "6"],
+            default="6"
+        )
+        
+        if choice == "1":
+            self._create_schema_recipe()
+        elif choice == "2":
+            self._view_schema_recipe()
+        elif choice == "3":
+            self._delete_schema_recipe()
+        elif choice == "4":
+            self._export_schema_recipe()
+        elif choice == "5":
+            self._import_schema_recipe()
+        # choice == "6" returns to config menu
+    
+    def _set_quality_thresholds(self):
+        """Set quality thresholds for different aspects of scraping."""
+        self.console.print("\n[bold green]📏 Set Quality Thresholds[/bold green]")
+        
+        # Initialize quality thresholds if not exists
+        if "quality_thresholds" not in self.config:
+            self.config["quality_thresholds"] = {
+                "minimum_completeness": 0.6,
+                "minimum_accuracy": 0.8,
+                "minimum_consistency": 0.5,
+                "minimum_overall": 60.0
+            }
+        
+        thresholds = self.config["quality_thresholds"]
+        
+        # Display current thresholds
+        thresholds_table = Table(title="Current Quality Thresholds", box=box.ROUNDED)
+        thresholds_table.add_column("Metric", style="cyan")
+        thresholds_table.add_column("Current Value", style="white")
+        thresholds_table.add_column("Description", style="dim")
+        
+        threshold_descriptions = {
+            "minimum_completeness": "Minimum data completeness ratio (0.0-1.0)",
+            "minimum_accuracy": "Minimum data accuracy ratio (0.0-1.0)",
+            "minimum_consistency": "Minimum data consistency ratio (0.0-1.0)",
+            "minimum_overall": "Minimum overall quality score (0-100)"
+        }
+        
+        for key, value in thresholds.items():
+            description = threshold_descriptions.get(key, "Quality threshold")
+            thresholds_table.add_row(key.replace("_", " ").title(), str(value), description)
+        
+        self.console.print(thresholds_table)
+        
+        # Allow modification
+        modify = Confirm.ask("\n[cyan]Modify quality thresholds?[/cyan]", default=False)
+        if not modify:
+            return
+        
+        for key, current_value in thresholds.items():
+            description = threshold_descriptions.get(key, key)
+            new_value_str = Prompt.ask(
+                f"[cyan]{key.replace('_', ' ').title()}[/cyan] ({description})",
+                default=str(current_value)
+            )
+            
+            try:
+                new_value = float(new_value_str)
+                
+                # Validate ranges
+                if key == "minimum_overall":
+                    if not 0 <= new_value <= 100:
+                        self.console.print(f"[red]Overall quality score must be between 0 and 100[/red]")
+                        continue
+                else:
+                    if not 0.0 <= new_value <= 1.0:
+                        self.console.print(f"[red]Ratio values must be between 0.0 and 1.0[/red]")
+                        continue
+                
+                thresholds[key] = new_value
+                self.console.print(f"[green]✅ Updated {key} to {new_value}[/green]")
+                
+            except ValueError:
+                self.console.print(f"[red]Invalid numeric value for {key}[/red]")
+        
+        # Update scraper tool quality thresholds
+        try:
+            self.scraper_tool.update_config(min_quality_score=thresholds["minimum_overall"])
+            self.console.print("[green]✅ Quality thresholds updated successfully[/green]")
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to update quality thresholds: {e}[/red]")
+    
+    def _save_configuration(self):
+        """Save current configuration to file."""
+        self.console.print("\n[bold green]💾 Save Configuration[/bold green]")
+        
+        if self.config_path:
+            filename = self.config_path
+        else:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"scraper_config_{timestamp}.json"
+        
+        try:
+            with open(filename, 'w') as f:
+                json.dump(self.config, f, indent=2, default=str)
+            
+            self.console.print(f"[green]✅ Configuration saved to {filename}[/green]")
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to save configuration: {e}[/red]")
+    
+    def _reset_to_defaults(self):
+        """Reset configuration to default values."""
+        self.console.print("\n[bold red]🔄 Reset to Defaults[/bold red]")
+        
+        confirm = Confirm.ask(
+            "[yellow]This will reset ALL settings to defaults. Are you sure?[/yellow]",
+            default=False
+        )
+        
+        if not confirm:
+            self.console.print("[cyan]Reset cancelled.[/cyan]")
+            return
+        
+        # Reset to default configuration
+        self.config = self._load_default_config()
+        
+        # Reinitialize components with new config
+        try:
+            scraper_config = WebsiteScraperConfig(**self.config["scraper"])
+            self.scraper_tool = WebsiteScraperTool(scraper_config)
+            self.console.print("[green]✅ Configuration reset to defaults[/green]")
+        except Exception as e:
+            self.console.print(f"[red]❌ Failed to reset configuration: {e}[/red]")
+    
+    def _load_default_config(self) -> Dict[str, Any]:
+        """Load default configuration without user overrides."""
+        return {
+            "scraper": {
+                "base_url": "https://example.com",
+                "request_delay": 1.0,
+                "timeout": 30,
+                "max_pages": 5,
+                "max_results": 50,
+                "min_quality_score": 60.0,
+                "user_agent": "WebsiteScraperTool/1.0",
+                "respect_robots_txt": True,
+                "enable_rate_limiting": True,
+                "max_retries": 3,
+                "retry_delay": 2.0
+            },
+            "agent": {
+                "model": "gpt-3.5-turbo",
+                "temperature": 0.7,
+                "max_tokens": 2000
+            },
+            "interface": {
+                "show_reasoning": True,
+                "show_confidence": True,
+                "auto_execute": False,
+                "save_results": True,
+                "results_format": "json"
+            }
+        }
+    
+    def _create_schema_recipe(self):
+        """Create a new schema recipe."""
+        self.console.print("\n[bold green]📝 Create New Schema Recipe[/bold green]")
+        
+        name = Prompt.ask("[cyan]Recipe name[/cyan]")
+        if not name.strip():
+            self.console.print("[red]Recipe name cannot be empty.[/red]")
+            return
+        
+        description = Prompt.ask("[cyan]Recipe description[/cyan]", default="Custom schema recipe")
+        
+        # Create basic recipe structure
+        recipe = {
+            "name": name,
+            "description": description,
+            "fields": {},
+            "validation_rules": [],
+            "quality_weights": {
+                "completeness": 0.4,
+                "accuracy": 0.4,
+                "consistency": 0.2
+            }
+        }
+        
+        # Add fields
+        self.console.print("\n[bold]Add fields to the schema:[/bold]")
+        while True:
+            field_name = Prompt.ask("[cyan]Field name (or 'done' to finish)[/cyan]")
+            if field_name.lower() == 'done':
+                break
+            
+            if not field_name.strip():
+                continue
+            
+            field_type = Prompt.ask(
+                "[cyan]Field type[/cyan]",
+                choices=["string", "number", "array", "object", "boolean"],
+                default="string"
+            )
+            
+            field_desc = Prompt.ask(f"[cyan]Description for {field_name}[/cyan]", default=f"{field_name} field")
+            selector = Prompt.ask(f"[cyan]CSS selector for {field_name}[/cyan]", default=f".{field_name}")
+            required = Confirm.ask(f"[cyan]Is {field_name} required?[/cyan]", default=False)
+            
+            recipe["fields"][field_name] = {
+                "field_type": field_type,
+                "description": field_desc,
+                "extraction_selector": selector,
+                "required": required,
+                "quality_weight": 1.0
+            }
+        
+        if not recipe["fields"]:
+            self.console.print("[yellow]No fields added. Recipe not saved.[/yellow]")
+            return
+        
+        # Save recipe
+        if "schema_recipes" not in self.config:
+            self.config["schema_recipes"] = {}
+        
+        self.config["schema_recipes"][name] = recipe
+        self.console.print(f"[green]✅ Schema recipe '{name}' created successfully[/green]")
+    
+    def _view_schema_recipe(self):
+        """View details of a schema recipe."""
+        if "schema_recipes" not in self.config or not self.config["schema_recipes"]:
+            self.console.print("[yellow]No schema recipes found.[/yellow]")
+            return
+        
+        recipes = list(self.config["schema_recipes"].keys())
+        recipe_name = Prompt.ask(
+            "[cyan]Which recipe would you like to view?[/cyan]",
+            choices=recipes + ["cancel"],
+            default="cancel"
+        )
+        
+        if recipe_name == "cancel":
+            return
+        
+        recipe = self.config["schema_recipes"][recipe_name]
+        
+        # Display recipe details
+        self.console.print(f"\n[bold green]Schema Recipe: {recipe_name}[/bold green]")
+        self.console.print(f"[dim]Description: {recipe.get('description', 'No description')}[/dim]\n")
+        
+        # Display fields
+        fields_table = Table(title="Fields", box=box.ROUNDED)
+        fields_table.add_column("Field Name", style="cyan")
+        fields_table.add_column("Type", style="white")
+        fields_table.add_column("Selector", style="yellow")
+        fields_table.add_column("Required", style="green")
+        
+        for field_name, field_def in recipe.get("fields", {}).items():
+            required = "Yes" if field_def.get("required", False) else "No"
+            fields_table.add_row(
+                field_name,
+                field_def.get("field_type", "string"),
+                field_def.get("extraction_selector", ""),
+                required
+            )
+        
+        self.console.print(fields_table)
+    
+    def _delete_schema_recipe(self):
+        """Delete a schema recipe."""
+        if "schema_recipes" not in self.config or not self.config["schema_recipes"]:
+            self.console.print("[yellow]No schema recipes found.[/yellow]")
+            return
+        
+        recipes = list(self.config["schema_recipes"].keys())
+        recipe_name = Prompt.ask(
+            "[cyan]Which recipe would you like to delete?[/cyan]",
+            choices=recipes + ["cancel"],
+            default="cancel"
+        )
+        
+        if recipe_name == "cancel":
+            return
+        
+        confirm = Confirm.ask(f"[red]Delete recipe '{recipe_name}'?[/red]", default=False)
+        if confirm:
+            del self.config["schema_recipes"][recipe_name]
+            self.console.print(f"[green]✅ Recipe '{recipe_name}' deleted[/green]")
+    
+    def _export_schema_recipe(self):
+        """Export a schema recipe to file."""
+        if "schema_recipes" not in self.config or not self.config["schema_recipes"]:
+            self.console.print("[yellow]No schema recipes found.[/yellow]")
+            return
+        
+        recipes = list(self.config["schema_recipes"].keys())
+        recipe_name = Prompt.ask(
+            "[cyan]Which recipe would you like to export?[/cyan]",
+            choices=recipes + ["cancel"],
+            default="cancel"
+        )
+        
+        if recipe_name == "cancel":
+            return
+        
+        recipe = self.config["schema_recipes"][recipe_name]
+        filename = f"schema_recipe_{recipe_name.replace(' ', '_')}.json"
+        
+        try:
+            with open(filename, 'w') as f:
+                json.dump(recipe, f, indent=2)
+            self.console.print(f"[green]✅ Recipe exported to {filename}[/green]")
+        except Exception as e:
+            self.console.print(f"[red]❌ Export failed: {e}[/red]")
+    
+    def _import_schema_recipe(self):
+        """Import a schema recipe from file."""
+        filename = Prompt.ask("[cyan]Enter filename to import[/cyan]")
+        
+        try:
+            with open(filename, 'r') as f:
+                recipe = json.load(f)
+            
+            # Validate recipe structure
+            if not isinstance(recipe, dict) or "name" not in recipe or "fields" not in recipe:
+                self.console.print("[red]Invalid recipe format.[/red]")
+                return
+            
+            if "schema_recipes" not in self.config:
+                self.config["schema_recipes"] = {}
+            
+            recipe_name = recipe["name"]
+            if recipe_name in self.config["schema_recipes"]:
+                overwrite = Confirm.ask(f"[yellow]Recipe '{recipe_name}' already exists. Overwrite?[/yellow]", default=False)
+                if not overwrite:
+                    return
+            
+            self.config["schema_recipes"][recipe_name] = recipe
+            self.console.print(f"[green]✅ Recipe '{recipe_name}' imported successfully[/green]")
+            
+        except FileNotFoundError:
+            self.console.print(f"[red]File '{filename}' not found.[/red]")
+        except json.JSONDecodeError:
+            self.console.print(f"[red]Invalid JSON format in '{filename}'.[/red]")
+        except Exception as e:
+            self.console.print(f"[red]Import failed: {e}[/red]")
 
 
 def main():

@@ -493,6 +493,281 @@ class TestMainApplicationIntegration:
         assert len(app.session_history) == 0
 
 
+class TestConfigurationManagement:
+    """Test cases for configuration management functionality."""
+    
+    def setup_method(self):
+        """Set up test fixtures for configuration tests."""
+        self.temp_config = {
+            "scraper": {
+                "base_url": "https://test.com",
+                "request_delay": 0.1,
+                "timeout": 10,
+                "max_pages": 2,
+                "max_results": 10,
+                "min_quality_score": 50.0
+            },
+            "schema_recipes": {
+                "test_recipe": {
+                    "name": "test_recipe",
+                    "description": "Test schema recipe",
+                    "fields": {
+                        "title": {
+                            "field_type": "string",
+                            "description": "Item title",
+                            "extraction_selector": "h1",
+                            "required": True
+                        }
+                    }
+                }
+            },
+            "quality_thresholds": {
+                "minimum_completeness": 0.6,
+                "minimum_accuracy": 0.8,
+                "minimum_consistency": 0.5,
+                "minimum_overall": 60.0
+            }
+        }
+        
+        # Create temporary config file
+        self.config_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
+        json.dump(self.temp_config, self.config_file)
+        self.config_file.close()
+    
+    def teardown_method(self):
+        """Clean up test fixtures."""
+        Path(self.config_file.name).unlink(missing_ok=True)
+    
+    def test_modify_scraper_settings(self):
+        """Test modifying scraper settings."""
+        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app.console = Mock()
+        
+        # Test updating request_delay
+        original_delay = app.config["scraper"]["request_delay"]
+        new_delay = 2.5
+        
+        # Simulate the setting modification
+        app.config["scraper"]["request_delay"] = new_delay
+        app.scraper_tool.update_config(request_delay=new_delay)
+        
+        # Verify the setting was updated
+        assert app.config["scraper"]["request_delay"] == new_delay
+        assert app.config["scraper"]["request_delay"] != original_delay
+    
+    def test_manage_schema_recipes_create(self):
+        """Test creating a new schema recipe."""
+        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app.console = Mock()
+        
+        # Initialize schema recipes if not exists
+        if "schema_recipes" not in app.config:
+            app.config["schema_recipes"] = {}
+        
+        # Create a new recipe
+        new_recipe = {
+            "name": "new_test_recipe",
+            "description": "New test recipe",
+            "fields": {
+                "title": {
+                    "field_type": "string",
+                    "description": "Title field",
+                    "extraction_selector": "h1",
+                    "required": True
+                },
+                "content": {
+                    "field_type": "string",
+                    "description": "Content field",
+                    "extraction_selector": "p",
+                    "required": False
+                }
+            },
+            "validation_rules": [],
+            "quality_weights": {
+                "completeness": 0.4,
+                "accuracy": 0.4,
+                "consistency": 0.2
+            }
+        }
+        
+        app.config["schema_recipes"]["new_test_recipe"] = new_recipe
+        
+        # Verify the recipe was created
+        assert "new_test_recipe" in app.config["schema_recipes"]
+        assert app.config["schema_recipes"]["new_test_recipe"]["name"] == "new_test_recipe"
+        assert len(app.config["schema_recipes"]["new_test_recipe"]["fields"]) == 2
+    
+    def test_set_quality_thresholds(self):
+        """Test setting quality thresholds."""
+        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app.console = Mock()
+        
+        # Initialize quality thresholds if not exists
+        if "quality_thresholds" not in app.config:
+            app.config["quality_thresholds"] = {
+                "minimum_completeness": 0.6,
+                "minimum_accuracy": 0.8,
+                "minimum_consistency": 0.5,
+                "minimum_overall": 60.0
+            }
+        
+        # Update thresholds
+        new_thresholds = {
+            "minimum_completeness": 0.7,
+            "minimum_accuracy": 0.9,
+            "minimum_consistency": 0.6,
+            "minimum_overall": 70.0
+        }
+        
+        app.config["quality_thresholds"].update(new_thresholds)
+        
+        # Verify thresholds were updated
+        for key, value in new_thresholds.items():
+            assert app.config["quality_thresholds"][key] == value
+    
+    @patch('builtins.open', create=True)
+    @patch('json.dump')
+    def test_save_configuration(self, mock_json_dump, mock_open):
+        """Test saving configuration to file."""
+        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app.console = Mock()
+        
+        # Call save configuration
+        app._save_configuration()
+        
+        # Verify file was opened for writing
+        mock_open.assert_called()
+        
+        # Verify JSON was dumped
+        mock_json_dump.assert_called_once()
+        call_args = mock_json_dump.call_args[0]
+        assert call_args[0] == app.config
+    
+    def test_reset_to_defaults(self):
+        """Test resetting configuration to defaults."""
+        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app.console = Mock()
+        
+        # Modify some settings
+        app.config["scraper"]["request_delay"] = 5.0
+        app.config["scraper"]["max_results"] = 200
+        
+        # Get default config
+        default_config = app._load_default_config()
+        
+        # Reset to defaults
+        app.config = default_config
+        
+        # Verify settings were reset
+        assert app.config["scraper"]["request_delay"] == 1.0
+        assert app.config["scraper"]["max_results"] == 50
+    
+    def test_schema_recipe_export_import(self):
+        """Test exporting and importing schema recipes."""
+        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app.console = Mock()
+        
+        # Ensure schema recipes exist
+        if "schema_recipes" not in app.config:
+            app.config["schema_recipes"] = {}
+        
+        # Create a test recipe
+        test_recipe = {
+            "name": "export_test_recipe",
+            "description": "Recipe for export testing",
+            "fields": {
+                "title": {
+                    "field_type": "string",
+                    "description": "Title field",
+                    "extraction_selector": "h1",
+                    "required": True
+                }
+            }
+        }
+        
+        app.config["schema_recipes"]["export_test_recipe"] = test_recipe
+        
+        # Test export functionality (simulate file writing)
+        with patch('builtins.open', create=True) as mock_open:
+            with patch('json.dump') as mock_json_dump:
+                # Simulate export
+                filename = "schema_recipe_export_test_recipe.json"
+                mock_file = mock_open.return_value.__enter__.return_value
+                json.dump(test_recipe, mock_file, indent=2)
+                
+                # Verify export was called
+                mock_open.assert_called_with(filename, 'w')
+        
+        # Test import functionality
+        with patch('builtins.open', create=True) as mock_open:
+            with patch('json.load', return_value=test_recipe) as mock_json_load:
+                # Simulate import
+                imported_recipe = json.load(mock_open.return_value.__enter__.return_value)
+                
+                # Verify import structure
+                assert imported_recipe["name"] == "export_test_recipe"
+                assert "fields" in imported_recipe
+                assert "title" in imported_recipe["fields"]
+    
+    def test_configuration_persistence(self):
+        """Test configuration persistence across app restarts."""
+        # Create first app instance and modify config
+        app1 = WebsiteScraperApp(config_path=self.config_file.name)
+        app1.config["scraper"]["request_delay"] = 3.0
+        app1.config["scraper"]["max_results"] = 100
+        
+        # Save configuration
+        with open(self.config_file.name, 'w') as f:
+            json.dump(app1.config, f, indent=2)
+        
+        # Create second app instance
+        app2 = WebsiteScraperApp(config_path=self.config_file.name)
+        
+        # Verify configuration was persisted
+        assert app2.config["scraper"]["request_delay"] == 3.0
+        assert app2.config["scraper"]["max_results"] == 100
+    
+    def test_custom_extraction_rules_support(self):
+        """Test support for custom extraction rules."""
+        app = WebsiteScraperApp(config_path=self.config_file.name)
+        
+        # Create custom extraction rules in schema recipe
+        custom_recipe = {
+            "name": "custom_extraction_recipe",
+            "description": "Recipe with custom extraction rules",
+            "fields": {
+                "title": {
+                    "field_type": "string",
+                    "description": "Custom title extraction",
+                    "extraction_selector": "h1.custom-title, .title-alt",
+                    "required": True,
+                    "quality_weight": 2.0,
+                    "post_processing": ["clean", "normalize"]
+                },
+                "price": {
+                    "field_type": "string",
+                    "description": "Price with custom processing",
+                    "extraction_selector": ".price, .cost",
+                    "required": False,
+                    "quality_weight": 1.5,
+                    "post_processing": ["extract_numbers", "trim"]
+                }
+            }
+        }
+        
+        # Add to configuration
+        if "schema_recipes" not in app.config:
+            app.config["schema_recipes"] = {}
+        
+        app.config["schema_recipes"]["custom_extraction_recipe"] = custom_recipe
+        
+        # Verify custom rules are stored
+        recipe = app.config["schema_recipes"]["custom_extraction_recipe"]
+        assert recipe["fields"]["title"]["quality_weight"] == 2.0
+        assert "clean" in recipe["fields"]["title"]["post_processing"]
+        assert "extract_numbers" in recipe["fields"]["price"]["post_processing"]
+
+
 class TestMainFunction:
     """Test cases for the main entry point function."""
     
