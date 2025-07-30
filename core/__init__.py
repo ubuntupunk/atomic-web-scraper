@@ -4,15 +4,24 @@ Core module for the website scraper tool.
 Contains base interfaces, abstract classes, and core functionality.
 """
 
-from .interfaces import BaseExtractor, BaseAnalyzer, BaseGenerator
-from .exceptions import ScrapingError, NetworkError, ParsingError, ValidationError
+# Import only exceptions and error handler for now to avoid circular dependencies
+from .exceptions import (
+    ScrapingError, NetworkError, ParsingError, ValidationError,
+    ConfigurationError, RateLimitError, QualityError
+)
+from .error_handler import ErrorHandler, ErrorContext, RetryConfig, RetryStrategy, ErrorSeverity
 
 __all__ = [
-    "BaseExtractor",
-    "BaseAnalyzer", 
-    "BaseGenerator",
     "ScrapingError",
     "NetworkError",
     "ParsingError",
-    "ValidationError"
+    "ValidationError",
+    "ConfigurationError",
+    "RateLimitError",
+    "QualityError",
+    "ErrorHandler",
+    "ErrorContext",
+    "RetryConfig",
+    "RetryStrategy",
+    "ErrorSeverity"
 ]
