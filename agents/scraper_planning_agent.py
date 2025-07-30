@@ -4,7 +4,7 @@ Scraper Planning Agent for the website scraper tool.
 Main conversational agent that interprets user requests and coordinates scraping operations.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from atomic_agents.agents.base_agent import BaseAgent, BaseAgentConfig
 from atomic_agents.lib.base.base_io_schema import BaseIOSchema
 from atomic_agents.lib.components.system_prompt_generator import SystemPromptGenerator, SystemPromptContextProviderBase
@@ -488,48 +488,321 @@ class ScraperPlanningAgent(BaseAgent):
         schema_recipe: 'SchemaRecipe', 
         parsed_request: Dict[str, Any]
     ) -> str:
-        """Generate reasoning explanation for the decisions made."""
+        """Generate comprehensive reasoning explanation for the decisions made."""
         reasoning_parts = []
         
-        reasoning_parts.append("## Decision Reasoning")
+        reasoning_parts.append("## Decision Reasoning & Analysis")
+        reasoning_parts.append("")
+        
+        # Request analysis reasoning
+        reasoning_parts.append("### Request Analysis")
+        reasoning_parts.append("**User Intent Interpretation:**")
+        reasoning_parts.append(f"- Content type identified: '{parsed_request['content_type']}'")
+        reasoning_parts.append(f"- Target data types: {', '.join(parsed_request['target_data']) if parsed_request['target_data'] else 'general content'}")
+        reasoning_parts.append(f"- Key terms extracted: {', '.join(parsed_request['keywords'][:5]) if parsed_request['keywords'] else 'none specific'}")
+        
+        if parsed_request['temporal_filters']:
+            reasoning_parts.append(f"- Temporal filters detected: {', '.join(parsed_request['temporal_filters'])}")
+        if parsed_request['location_filters']:
+            reasoning_parts.append(f"- Location filters detected: {', '.join(parsed_request['location_filters'])}")
+        
+        reasoning_parts.append("")
+        
+        # Website analysis reasoning
+        reasoning_parts.append("### Website Analysis")
+        reasoning_parts.append("**Structure Assessment:**")
+        if 'error' not in analysis.metadata:
+            reasoning_parts.append(f"- Successfully analyzed website: {analysis.url}")
+            reasoning_parts.append(f"- Page title: {getattr(analysis, 'title', 'Unknown')}")
+            if hasattr(analysis, 'content_patterns') and analysis.content_patterns:
+                reasoning_parts.append(f"- Content patterns identified: {len(analysis.content_patterns)} patterns")
+                for i, pattern in enumerate(analysis.content_patterns[:3]):
+                    reasoning_parts.append(f"  - Pattern {i+1}: {pattern.get('type', 'unknown')} content")
+            else:
+                reasoning_parts.append("- Limited content patterns detected, using generic approach")
+        else:
+            reasoning_parts.append(f"- Website analysis failed: {analysis.metadata.get('error', 'Unknown error')}")
+            reasoning_parts.append("- Falling back to common web patterns and best practices")
+        
         reasoning_parts.append("")
         
         # Strategy reasoning
         reasoning_parts.append("### Strategy Selection")
-        reasoning_parts.append(f"Selected '{strategy.scrape_type}' strategy because:")
+        reasoning_parts.append(f"**Selected '{strategy.scrape_type}' strategy because:**")
         
-        if strategy.scrape_type == 'list':
-            reasoning_parts.append("- The request indicates multiple items need to be extracted")
-            reasoning_parts.append("- Website analysis suggests list-like content structure")
-        elif strategy.scrape_type == 'detail':
-            reasoning_parts.append("- The request focuses on detailed information")
-            reasoning_parts.append("- Website appears to have rich content areas")
+        strategy_reasoning = self._get_strategy_reasoning(strategy, parsed_request, analysis)
+        for reason in strategy_reasoning:
+            reasoning_parts.append(f"- {reason}")
+        
+        reasoning_parts.append("")
+        reasoning_parts.append("**Configuration Details:**")
+        reasoning_parts.append(f"- Max pages: {strategy.max_pages} (balances thoroughness with efficiency)")
+        reasoning_parts.append(f"- Request delay: {strategy.request_delay}s (respectful crawling)")
+        
+        if strategy.pagination_strategy:
+            reasoning_parts.append(f"- Pagination: {strategy.pagination_strategy} (handles multi-page content)")
         
         reasoning_parts.append("")
         
         # Selector reasoning
-        reasoning_parts.append("### Selector Selection")
-        reasoning_parts.append("Target selectors chosen based on:")
-        reasoning_parts.append("- Common HTML patterns for the content type")
-        reasoning_parts.append("- Website structure analysis results")
-        reasoning_parts.append("- Fallback options for robustness")
+        reasoning_parts.append("### Selector Strategy")
+        reasoning_parts.append("**Target selectors chosen based on:**")
+        selector_reasoning = self._get_selector_reasoning(strategy, parsed_request)
+        for reason in selector_reasoning:
+            reasoning_parts.append(f"- {reason}")
+        
+        reasoning_parts.append("")
+        reasoning_parts.append("**Selector Details:**")
+        for i, selector in enumerate(strategy.target_selectors[:3]):
+            reasoning_parts.append(f"- Selector {i+1}: `{selector}` - {self._explain_selector(selector)}")
+        
         reasoning_parts.append("")
         
         # Schema reasoning
         reasoning_parts.append("### Schema Design")
-        reasoning_parts.append("Field selection based on:")
-        reasoning_parts.append(f"- User criteria: '{' '.join(parsed_request['keywords'][:3])}'")
-        reasoning_parts.append(f"- Target data types: {', '.join(parsed_request['target_data'])}")
-        reasoning_parts.append("- Standard fields for the content type")
+        reasoning_parts.append("**Field selection rationale:**")
+        schema_reasoning = self._get_schema_reasoning(schema_recipe, parsed_request)
+        for reason in schema_reasoning:
+            reasoning_parts.append(f"- {reason}")
+        
+        reasoning_parts.append("")
+        reasoning_parts.append("**Field Details:**")
+        for field_name, field_def in list(schema_recipe.fields.items())[:5]:  # Show first 5 fields
+            priority = "High" if field_def.required else "Medium" if field_def.quality_weight > 0.7 else "Low"
+            reasoning_parts.append(f"- **{field_name}** ({priority} priority): {field_def.description}")
+            reasoning_parts.append(f"  - Selector: `{field_def.extraction_selector}`")
+            reasoning_parts.append(f"  - Quality weight: {field_def.quality_weight}")
+        
         reasoning_parts.append("")
         
         # Quality reasoning
-        reasoning_parts.append("### Quality Considerations")
-        reasoning_parts.append("- Required fields ensure minimum data completeness")
-        reasoning_parts.append("- Quality weights prioritize important fields")
-        reasoning_parts.append("- Post-processing steps clean and validate data")
+        reasoning_parts.append("### Quality Assurance")
+        reasoning_parts.append("**Quality measures implemented:**")
+        quality_reasoning = self._get_quality_reasoning(schema_recipe, strategy)
+        for reason in quality_reasoning:
+            reasoning_parts.append(f"- {reason}")
+        
+        reasoning_parts.append("")
+        
+        # Risk assessment
+        reasoning_parts.append("### Risk Assessment")
+        risks = self._assess_risks(analysis, strategy, schema_recipe)
+        if risks:
+            reasoning_parts.append("**Potential challenges identified:**")
+            for risk in risks:
+                reasoning_parts.append(f"- {risk}")
+        else:
+            reasoning_parts.append("**No significant risks identified** - strategy appears robust")
+        
+        reasoning_parts.append("")
+        
+        # Recommendations
+        reasoning_parts.append("### Recommendations")
+        recommendations = self._generate_recommendations(analysis, strategy, schema_recipe, parsed_request)
+        for rec in recommendations:
+            reasoning_parts.append(f"- {rec}")
         
         return "\n".join(reasoning_parts)
+    
+    def _get_strategy_reasoning(
+        self, 
+        strategy: ScrapingStrategy, 
+        parsed_request: Dict[str, Any], 
+        analysis: 'WebsiteStructureAnalysis'
+    ) -> List[str]:
+        """Get specific reasoning for strategy selection."""
+        reasons = []
+        
+        if strategy.scrape_type == 'list':
+            reasons.append("Request indicates multiple items need to be extracted")
+            reasons.append("List strategy optimal for bulk data collection")
+            if parsed_request['content_type'] == 'list':
+                reasons.append("User explicitly requested list-type content")
+            if hasattr(analysis, 'content_patterns'):
+                reasons.append("Website structure suggests repeating content patterns")
+        
+        elif strategy.scrape_type == 'detail':
+            reasons.append("Request focuses on detailed information extraction")
+            reasons.append("Detail strategy provides comprehensive data capture")
+            if parsed_request['content_type'] == 'detail':
+                reasons.append("User explicitly requested detailed information")
+        
+        elif strategy.scrape_type == 'search':
+            reasons.append("Request appears to be search-oriented")
+            reasons.append("Search strategy handles result pages effectively")
+            if 'search' in parsed_request['keywords']:
+                reasons.append("Search terms detected in user request")
+        
+        elif strategy.scrape_type == 'sitemap':
+            reasons.append("Sitemap strategy chosen for comprehensive site coverage")
+            reasons.append("Efficient for discovering all available content")
+        
+        return reasons
+    
+    def _get_selector_reasoning(
+        self, 
+        strategy: ScrapingStrategy, 
+        parsed_request: Dict[str, Any]
+    ) -> List[str]:
+        """Get reasoning for selector choices."""
+        reasons = []
+        
+        reasons.append("Common HTML patterns for the identified content type")
+        reasons.append("Semantic HTML elements that typically contain target data")
+        reasons.append("CSS classes commonly used for content organization")
+        
+        if parsed_request['target_data']:
+            reasons.append(f"Selectors optimized for {', '.join(parsed_request['target_data'])} content")
+        
+        reasons.append("Fallback selectors included for robustness")
+        reasons.append("Progressive specificity from generic to specific selectors")
+        
+        return reasons
+    
+    def _get_schema_reasoning(
+        self, 
+        schema_recipe: 'SchemaRecipe', 
+        parsed_request: Dict[str, Any]
+    ) -> List[str]:
+        """Get reasoning for schema design choices."""
+        reasons = []
+        
+        required_count = sum(1 for field in schema_recipe.fields.values() if field.required)
+        total_count = len(schema_recipe.fields)
+        
+        reasons.append(f"Schema includes {total_count} fields with {required_count} required fields")
+        reasons.append("Field selection based on user criteria and content type analysis")
+        
+        if parsed_request['target_data']:
+            reasons.append(f"Specialized fields added for: {', '.join(parsed_request['target_data'])}")
+        
+        reasons.append("Quality weights assigned based on field importance and reliability")
+        reasons.append("Post-processing steps included for data cleaning and validation")
+        reasons.append("Flexible schema allows for partial data extraction")
+        
+        return reasons
+    
+    def _get_quality_reasoning(
+        self, 
+        schema_recipe: 'SchemaRecipe', 
+        strategy: ScrapingStrategy
+    ) -> List[str]:
+        """Get reasoning for quality assurance measures."""
+        reasons = []
+        
+        reasons.append("Required fields ensure minimum data completeness")
+        reasons.append("Quality weights prioritize critical information")
+        reasons.append("Post-processing steps clean and normalize extracted data")
+        reasons.append("Validation rules prevent invalid data from being stored")
+        
+        if hasattr(strategy, 'content_filters') and strategy.content_filters:
+            reasons.append("Content filters remove irrelevant or low-quality data")
+        
+        reasons.append("Quality scoring enables filtering of substandard results")
+        reasons.append("Multiple selector fallbacks improve extraction reliability")
+        
+        return reasons
+    
+    def _explain_selector(self, selector: str) -> str:
+        """Provide human-readable explanation of CSS selector."""
+        explanations = {
+            'div': 'Generic container elements',
+            'article': 'Semantic article content',
+            'li': 'List item elements',
+            'h1': 'Main headings',
+            'h2': 'Secondary headings',
+            'h3': 'Tertiary headings',
+            'p': 'Paragraph text',
+            'a': 'Link elements',
+            '.title': 'Elements with title class',
+            '.content': 'Elements with content class',
+            '.item': 'Elements with item class',
+            '.product': 'Elements with product class',
+            '.price': 'Elements with price class',
+            '.date': 'Elements with date class'
+        }
+        
+        # Simple selector explanation
+        for pattern, explanation in explanations.items():
+            if pattern in selector:
+                return explanation
+        
+        return 'Custom selector for specific content'
+    
+    def _assess_risks(
+        self, 
+        analysis: 'WebsiteStructureAnalysis', 
+        strategy: ScrapingStrategy, 
+        schema_recipe: 'SchemaRecipe'
+    ) -> List[str]:
+        """Assess potential risks and challenges."""
+        risks = []
+        
+        # Website analysis risks
+        if 'error' in analysis.metadata:
+            risks.append("Website analysis failed - selectors may not be optimal")
+        
+        # Strategy risks
+        if not strategy.target_selectors:
+            risks.append("No specific target selectors - may extract irrelevant content")
+        
+        if strategy.scrape_type == 'list' and not strategy.pagination_strategy:
+            risks.append("List scraping without pagination may miss content")
+        
+        # Schema risks
+        required_fields = sum(1 for field in schema_recipe.fields.values() if field.required)
+        if required_fields == 0:
+            risks.append("No required fields - may result in empty extractions")
+        
+        if len(schema_recipe.fields) > 10:
+            risks.append("Large number of fields may impact extraction performance")
+        
+        # Selector risks
+        generic_selectors = ['div', 'span', 'p']
+        if any(sel in generic_selectors for sel in strategy.target_selectors):
+            risks.append("Generic selectors may extract unintended content")
+        
+        return risks
+    
+    def _generate_recommendations(
+        self, 
+        analysis: 'WebsiteStructureAnalysis', 
+        strategy: ScrapingStrategy, 
+        schema_recipe: 'SchemaRecipe', 
+        parsed_request: Dict[str, Any]
+    ) -> List[str]:
+        """Generate actionable recommendations."""
+        recommendations = []
+        
+        # General recommendations
+        recommendations.append("Test the strategy on a small sample before full execution")
+        recommendations.append("Monitor quality scores and adjust thresholds as needed")
+        
+        # Strategy-specific recommendations
+        if strategy.scrape_type == 'list':
+            recommendations.append("Consider enabling pagination if more results are needed")
+            recommendations.append("Adjust max_pages based on content volume requirements")
+        
+        # Quality recommendations
+        avg_quality_weight = sum(field.quality_weight for field in schema_recipe.fields.values()) / len(schema_recipe.fields)
+        if avg_quality_weight < 0.6:
+            recommendations.append("Consider increasing quality weights for critical fields")
+        
+        # Performance recommendations
+        if strategy.request_delay < 1.0:
+            recommendations.append("Consider increasing request delay for more respectful crawling")
+        
+        if len(strategy.target_selectors) > 5:
+            recommendations.append("Consider reducing number of target selectors for better performance")
+        
+        # Data recommendations
+        if parsed_request['target_data']:
+            recommendations.append(f"Validate extracted {', '.join(parsed_request['target_data'])} data for accuracy")
+        
+        recommendations.append("Review extracted samples to refine selectors if needed")
+        recommendations.append("Consider adding fallback selectors for improved reliability")
+        
+        return recommendations
     
     def _calculate_confidence(
         self, 
@@ -537,39 +810,157 @@ class ScraperPlanningAgent(BaseAgent):
         strategy: ScrapingStrategy, 
         schema_recipe: 'SchemaRecipe'
     ) -> float:
-        """Calculate confidence score for the generated plan."""
-        confidence_factors = []
+        """Calculate comprehensive confidence score for the generated plan."""
+        confidence_components = {}
         
-        # Website analysis confidence
+        # Website analysis confidence (25% weight)
         if 'error' not in analysis.metadata:
-            confidence_factors.append(0.8)  # Successfully analyzed website
+            confidence_components['website_analysis'] = 0.85  # Successfully analyzed website
         else:
-            confidence_factors.append(0.3)  # Failed to analyze website
+            confidence_components['website_analysis'] = 0.25  # Failed to analyze website
         
-        # Strategy confidence
+        # Strategy confidence (30% weight)
+        strategy_score = self._calculate_strategy_confidence(strategy)
+        confidence_components['strategy'] = strategy_score
+        
+        # Schema confidence (25% weight)
+        schema_score = self._calculate_schema_confidence(schema_recipe)
+        confidence_components['schema'] = schema_score
+        
+        # Selector confidence (20% weight)
+        selector_score = self._calculate_selector_confidence(strategy)
+        confidence_components['selectors'] = selector_score
+        
+        # Calculate weighted confidence score
+        weights = {
+            'website_analysis': 0.25,
+            'strategy': 0.30,
+            'schema': 0.25,
+            'selectors': 0.20
+        }
+        
+        weighted_confidence = sum(
+            confidence_components[component] * weights[component]
+            for component in confidence_components
+        )
+        
+        # Apply confidence modifiers
+        final_confidence = self._apply_confidence_modifiers(
+            weighted_confidence, analysis, strategy, schema_recipe
+        )
+        
+        return min(1.0, max(0.0, final_confidence))
+    
+    def _calculate_strategy_confidence(self, strategy: ScrapingStrategy) -> float:
+        """Calculate confidence in the strategy selection."""
+        score = 0.5  # Base score
+        
+        # Strategy type appropriateness
+        if strategy.scrape_type in ['list', 'detail', 'search']:
+            score += 0.2  # Common, well-supported strategies
+        
+        # Configuration completeness
         if strategy.target_selectors:
-            confidence_factors.append(0.7)  # Has target selectors
-        else:
-            confidence_factors.append(0.4)  # No specific selectors
+            score += 0.15
+        if strategy.pagination_strategy:
+            score += 0.1
+        if strategy.max_pages > 1:
+            score += 0.05
         
-        # Schema confidence
+        return min(1.0, score)
+    
+    def _calculate_schema_confidence(self, schema_recipe: 'SchemaRecipe') -> float:
+        """Calculate confidence in the schema design."""
+        score = 0.3  # Base score
+        
+        # Field coverage
+        field_count = len(schema_recipe.fields)
+        if field_count >= 5:
+            score += 0.3
+        elif field_count >= 3:
+            score += 0.2
+        elif field_count >= 2:
+            score += 0.1
+        
+        # Required fields presence
         required_fields = sum(1 for field in schema_recipe.fields.values() if field.required)
         if required_fields > 0:
-            confidence_factors.append(0.8)  # Has required fields
-        else:
-            confidence_factors.append(0.6)  # No required fields
+            score += 0.2
         
-        # Field coverage confidence
-        field_count = len(schema_recipe.fields)
-        if field_count >= 3:
-            confidence_factors.append(0.9)  # Good field coverage
-        elif field_count >= 2:
-            confidence_factors.append(0.7)  # Adequate field coverage
-        else:
-            confidence_factors.append(0.5)  # Limited field coverage
+        # Quality weights distribution
+        avg_quality_weight = sum(field.quality_weight for field in schema_recipe.fields.values()) / len(schema_recipe.fields)
+        if avg_quality_weight > 0.7:
+            score += 0.15
+        elif avg_quality_weight > 0.5:
+            score += 0.1
         
-        # Calculate weighted average
-        return sum(confidence_factors) / len(confidence_factors)
+        # Post-processing coverage
+        fields_with_processing = sum(1 for field in schema_recipe.fields.values() if field.post_processing)
+        if fields_with_processing > 0:
+            score += 0.05
+        
+        return min(1.0, score)
+    
+    def _calculate_selector_confidence(self, strategy: ScrapingStrategy) -> float:
+        """Calculate confidence in the selector choices."""
+        score = 0.2  # Base score
+        
+        if not strategy.target_selectors:
+            return score
+        
+        # Selector specificity
+        specific_selectors = sum(1 for sel in strategy.target_selectors 
+                               if any(char in sel for char in ['.', '#', '[']))
+        if specific_selectors > 0:
+            score += 0.3
+        
+        # Selector diversity
+        if len(strategy.target_selectors) > 1:
+            score += 0.2
+        
+        # Semantic selectors
+        semantic_selectors = sum(1 for sel in strategy.target_selectors 
+                               if any(tag in sel for tag in ['article', 'section', 'main', 'header']))
+        if semantic_selectors > 0:
+            score += 0.15
+        
+        # Fallback selectors
+        generic_selectors = sum(1 for sel in strategy.target_selectors 
+                              if sel in ['div', 'span', 'p'])
+        if generic_selectors > 0 and len(strategy.target_selectors) > generic_selectors:
+            score += 0.15  # Has both specific and generic selectors
+        
+        return min(1.0, score)
+    
+    def _apply_confidence_modifiers(
+        self, 
+        base_confidence: float, 
+        analysis: 'WebsiteStructureAnalysis', 
+        strategy: ScrapingStrategy, 
+        schema_recipe: 'SchemaRecipe'
+    ) -> float:
+        """Apply modifiers to adjust confidence based on risk factors."""
+        confidence = base_confidence
+        
+        # Risk-based modifiers
+        risks = self._assess_risks(analysis, strategy, schema_recipe)
+        risk_penalty = len(risks) * 0.05  # 5% penalty per risk
+        confidence -= risk_penalty
+        
+        # Complexity modifiers
+        if len(schema_recipe.fields) > 8:
+            confidence -= 0.05  # Complex schemas are riskier
+        
+        if strategy.max_pages > 10:
+            confidence -= 0.03  # Many pages increase failure risk
+        
+        # Quality modifiers
+        high_quality_fields = sum(1 for field in schema_recipe.fields.values() 
+                                if field.quality_weight > 0.8)
+        if high_quality_fields > 0:
+            confidence += 0.05  # High-quality fields increase confidence
+        
+        return confidence
     
     def _handle_error(self, error_message: str, input_data: ScraperAgentInputSchema) -> ScraperAgentOutputSchema:
         """Handle errors gracefully by returning a basic response."""
