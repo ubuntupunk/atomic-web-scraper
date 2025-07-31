@@ -10,10 +10,10 @@ import time
 from unittest.mock import Mock, patch, MagicMock
 from typing import Dict, Any
 
-from website_scraper_tool.core.error_handler import (
+from atomic_scraper_tool.core.error_handler import (
     ErrorHandler, ErrorContext, RetryConfig, RetryStrategy, ErrorSeverity
 )
-from website_scraper_tool.core.exceptions import (
+from atomic_scraper_tool.core.exceptions import (
     ScrapingError, NetworkError, ParsingError, ValidationError,
     ConfigurationError, RateLimitError, QualityError
 )

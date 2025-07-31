@@ -25,7 +25,7 @@ class ScenarioType(str, Enum):
 
 
 @dataclass
-class TestScenario:
+class ScrapingTestScenario:
     """
     A test scenario that combines a mock website with testing objectives.
     """
@@ -64,7 +64,7 @@ class ScenarioGenerator:
             ScenarioType.DATA_QUALITY: self._create_data_quality_scenarios
         }
     
-    def generate_scenario(self, scenario_type: ScenarioType, **kwargs) -> TestScenario:
+    def generate_scenario(self, scenario_type: ScenarioType, **kwargs) -> ScrapingTestScenario:
         """
         Generate a test scenario of the specified type.
         
@@ -78,7 +78,7 @@ class ScenarioGenerator:
         generator = self.scenario_templates[scenario_type]
         return generator(**kwargs)
     
-    def generate_all_scenarios(self) -> List[TestScenario]:
+    def generate_all_scenarios(self) -> List[ScrapingTestScenario]:
         """
         Generate all available test scenarios.
         
@@ -96,7 +96,7 @@ class ScenarioGenerator:
         
         return scenarios
     
-    def _create_basic_scraping_scenarios(self, **kwargs) -> TestScenario:
+    def _create_basic_scraping_scenarios(self, **kwargs) -> ScrapingTestScenario:
         """Create basic scraping test scenarios."""
         website_type = kwargs.get('website_type', WebsiteType.ECOMMERCE)
         
@@ -142,7 +142,7 @@ class ScenarioGenerator:
             ]
             test_urls = ["/", "/page/1"]
         
-        return TestScenario(
+        return ScrapingTestScenario(
             name=f"Basic {website_type.value} Scraping",
             description=f"Test basic scraping functionality on a {website_type.value} website",
             scenario_type=ScenarioType.BASIC_SCRAPING,
@@ -153,7 +153,7 @@ class ScenarioGenerator:
             metadata={'website_type': website_type.value}
         )
     
-    def _create_error_handling_scenarios(self, **kwargs) -> TestScenario:
+    def _create_error_handling_scenarios(self, **kwargs) -> ScrapingTestScenario:
         """Create error handling test scenarios."""
         mock_site = MockWebsiteGenerator.create_problematic_site()
         
@@ -170,7 +170,7 @@ class ScenarioGenerator:
         
         test_urls = ["/", "/page/1", "/page/2", "/product/1", "/product/2"]
         
-        return TestScenario(
+        return ScrapingTestScenario(
             name="Error Handling",
             description="Test scraper's ability to handle various errors and malformed content",
             scenario_type=ScenarioType.ERROR_HANDLING,
@@ -181,7 +181,7 @@ class ScenarioGenerator:
             metadata={'error_simulation': True}
         )
     
-    def _create_pagination_scenarios(self, **kwargs) -> TestScenario:
+    def _create_pagination_scenarios(self, **kwargs) -> ScrapingTestScenario:
         """Create pagination test scenarios."""
         num_pages = kwargs.get('num_pages', 5)
         items_per_page = kwargs.get('items_per_page', 10)
@@ -205,7 +205,7 @@ class ScenarioGenerator:
         
         test_urls = [f"/page/{i}" for i in range(1, num_pages + 1)]
         
-        return TestScenario(
+        return ScrapingTestScenario(
             name="Pagination Handling",
             description="Test scraper's ability to handle paginated content",
             scenario_type=ScenarioType.PAGINATION,
@@ -216,7 +216,7 @@ class ScenarioGenerator:
             metadata={'num_pages': num_pages, 'items_per_page': items_per_page}
         )
     
-    def _create_dynamic_content_scenarios(self, **kwargs) -> TestScenario:
+    def _create_dynamic_content_scenarios(self, **kwargs) -> ScrapingTestScenario:
         """Create dynamic content test scenarios."""
         mock_site = MockWebsiteGenerator.create_ecommerce_site(num_products=30)
         
@@ -234,7 +234,7 @@ class ScenarioGenerator:
         
         test_urls = ["/", "/product/1", "/product/10"]
         
-        return TestScenario(
+        return ScrapingTestScenario(
             name="Dynamic Content",
             description="Test scraper's ability to handle dynamic and interactive content",
             scenario_type=ScenarioType.DYNAMIC_CONTENT,
@@ -245,7 +245,7 @@ class ScenarioGenerator:
             metadata={'dynamic_simulation': True}
         )
     
-    def _create_performance_scenarios(self, **kwargs) -> TestScenario:
+    def _create_performance_scenarios(self, **kwargs) -> ScrapingTestScenario:
         """Create performance test scenarios."""
         num_products = kwargs.get('num_products', 100)
         mock_site = MockWebsiteGenerator.create_ecommerce_site(num_products=num_products)
@@ -265,7 +265,7 @@ class ScenarioGenerator:
         # Generate many test URLs for performance testing
         test_urls = ["/"] + [f"/page/{i}" for i in range(1, 6)] + [f"/product/{i}" for i in range(1, 21)]
         
-        return TestScenario(
+        return ScrapingTestScenario(
             name="Performance Testing",
             description="Test scraper's performance with large amounts of content",
             scenario_type=ScenarioType.PERFORMANCE,
@@ -276,7 +276,7 @@ class ScenarioGenerator:
             metadata={'num_products': num_products, 'performance_test': True}
         )
     
-    def _create_compliance_scenarios(self, **kwargs) -> TestScenario:
+    def _create_compliance_scenarios(self, **kwargs) -> ScrapingTestScenario:
         """Create compliance test scenarios."""
         mock_site = MockWebsiteGenerator.create_ecommerce_site(num_products=20)
         
@@ -294,7 +294,7 @@ class ScenarioGenerator:
         
         test_urls = ["/", "/page/1", "/product/1"]
         
-        return TestScenario(
+        return ScrapingTestScenario(
             name="Compliance Testing",
             description="Test scraper's compliance with ethical scraping practices",
             scenario_type=ScenarioType.COMPLIANCE,
@@ -305,7 +305,7 @@ class ScenarioGenerator:
             metadata={'compliance_test': True}
         )
     
-    def _create_data_quality_scenarios(self, **kwargs) -> TestScenario:
+    def _create_data_quality_scenarios(self, **kwargs) -> ScrapingTestScenario:
         """Create data quality test scenarios."""
         mock_site = MockWebsiteGenerator.create_ecommerce_site(num_products=25)
         
@@ -325,7 +325,7 @@ class ScenarioGenerator:
         
         test_urls = ["/", "/page/1", "/product/1", "/product/5", "/product/10"]
         
-        return TestScenario(
+        return ScrapingTestScenario(
             name="Data Quality Testing",
             description="Test the quality and accuracy of scraped data",
             scenario_type=ScenarioType.DATA_QUALITY,
@@ -343,7 +343,7 @@ class ScenarioGenerator:
         website_type: WebsiteType,
         scenario_type: ScenarioType,
         **kwargs
-    ) -> TestScenario:
+    ) -> ScrapingTestScenario:
         """
         Create a custom test scenario.
         
@@ -383,7 +383,7 @@ class ScenarioGenerator:
         validation_rules = kwargs.get('validation_rules', [])
         test_urls = kwargs.get('test_urls', ["/"])
         
-        return TestScenario(
+        return ScrapingTestScenario(
             name=name,
             description=description,
             scenario_type=scenario_type,
@@ -394,7 +394,7 @@ class ScenarioGenerator:
             metadata=kwargs.get('metadata', {})
         )
     
-    def get_scenario_by_name(self, name: str) -> Optional[TestScenario]:
+    def get_scenario_by_name(self, name: str) -> Optional[ScrapingTestScenario]:
         """
         Get a scenario by name.
         

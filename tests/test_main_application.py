@@ -11,12 +11,12 @@ from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 from io import StringIO
 
-from website_scraper_tool.main import WebsiteScraperApp
-from website_scraper_tool.tools.website_scraper_tool import WebsiteScraperOutputSchema
-from website_scraper_tool.models.base_models import ScrapedItem
+from atomic_scraper_tool.main import AtomicScraperApp
+from atomic_scraper_tool.tools.atomic_scraper_tool import AtomicScraperOutputSchema
+from atomic_scraper_tool.models.base_models import ScrapedItem
 
 
-class TestWebsiteScraperApp:
+class TestAtomicScraperApp:
     """Test cases for the main application."""
     
     def setup_method(self):
@@ -57,7 +57,7 @@ class TestWebsiteScraperApp:
     
     def test_app_initialization_with_config(self):
         """Test application initialization with config file."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         assert app.config["scraper"]["base_url"] == "https://test.com"
         assert app.config["scraper"]["request_delay"] == 0.1
@@ -66,7 +66,7 @@ class TestWebsiteScraperApp:
     
     def test_app_initialization_without_config(self):
         """Test application initialization with default config."""
-        app = WebsiteScraperApp()
+        app = AtomicScraperApp()
         
         # Should use default values
         assert app.config["scraper"]["base_url"] == "https://example.com"
@@ -82,31 +82,31 @@ class TestWebsiteScraperApp:
         
         try:
             with patch('builtins.print') as mock_print:
-                app = WebsiteScraperApp(config_path=invalid_config_file.name)
+                app = AtomicScraperApp(config_path=invalid_config_file.name)
                 # Should fall back to defaults and show warning
                 assert app.config["scraper"]["base_url"] == "https://example.com"
         finally:
             Path(invalid_config_file.name).unlink(missing_ok=True)
     
-    @patch('website_scraper_tool.main.WebsiteScraperApp._initialize_components')
+    @patch('atomic_scraper_tool.main.AtomicScraperApp._initialize_components')
     def test_load_config_merging(self, mock_init):
         """Test configuration merging with user config."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # User config should override defaults
         assert app.config["scraper"]["base_url"] == "https://test.com"
         assert app.config["scraper"]["request_delay"] == 0.1
         
         # Defaults should be preserved for unspecified values
-        assert app.config["scraper"]["user_agent"] == "WebsiteScraperTool/1.0"
+        assert app.config["scraper"]["user_agent"] == "AtomicScraperTool/1.0"
         assert app.config["scraper"]["respect_robots_txt"] is True
     
-    @patch('website_scraper_tool.main.Console')
-    @patch('website_scraper_tool.main.WebsiteScraperTool')
-    @patch('website_scraper_tool.main.ScraperPlanningAgent')
+    @patch('atomic_scraper_tool.main.Console')
+    @patch('atomic_scraper_tool.main.AtomicScraperTool')
+    @patch('atomic_scraper_tool.main.AtomicScraperPlanningAgent')
     def test_component_initialization(self, mock_agent, mock_tool, mock_console):
         """Test initialization of scraper components."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # Verify components were initialized
         assert app.scraper_tool is not None
@@ -116,11 +116,11 @@ class TestWebsiteScraperApp:
     
     def test_mock_planning_agent_response(self):
         """Test mock planning agent response generation."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
-        from website_scraper_tool.agents.scraper_planning_agent import ScraperAgentInputSchema
+        from atomic_scraper_tool.agents.scraper_planning_agent import AtomicScraperAgentInputSchema
         
-        agent_input = ScraperAgentInputSchema(
+        agent_input = AtomicScraperAgentInputSchema(
             request="Test scraping request",
             target_url="https://example.com",
             max_results=10,
@@ -147,18 +147,18 @@ class TestWebsiteScraperApp:
         assert "fields" in schema
         assert "title" in schema["fields"]
     
-    @patch('website_scraper_tool.main.WebsiteScraperApp._display_planning_results')
-    @patch('website_scraper_tool.main.WebsiteScraperApp._display_scraping_results')
-    @patch('website_scraper_tool.main.Confirm.ask')
+    @patch('atomic_scraper_tool.main.AtomicScraperApp._display_planning_results')
+    @patch('atomic_scraper_tool.main.AtomicScraperApp._display_scraping_results')
+    @patch('atomic_scraper_tool.main.Confirm.ask')
     def test_process_scraping_request_success(self, mock_confirm, mock_display_results, mock_display_planning):
         """Test successful scraping request processing."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # Mock user confirmation
         mock_confirm.return_value = True
         
         # Mock scraper tool response
-        mock_scraping_result = Mock(spec=WebsiteScraperOutputSchema)
+        mock_scraping_result = Mock(spec=AtomicScraperOutputSchema)
         mock_scraping_result.results = {
             'items': [{'data': {'title': 'Test Item'}, 'quality_score': 85.0}],
             'total_scraped': 1
@@ -195,10 +195,10 @@ class TestWebsiteScraperApp:
         assert len(app.session_history) == 1
         assert app.session_history[0]["request"] == "Test request"
     
-    @patch('website_scraper_tool.main.Confirm.ask')
+    @patch('atomic_scraper_tool.main.Confirm.ask')
     def test_process_scraping_request_user_cancellation(self, mock_confirm):
         """Test scraping request cancellation by user."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # Mock user cancellation
         mock_confirm.return_value = False
@@ -222,7 +222,7 @@ class TestWebsiteScraperApp:
     
     def test_save_to_history(self):
         """Test saving requests to session history."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         planning_result = {
             "scraping_plan": "Test plan",
@@ -255,7 +255,7 @@ class TestWebsiteScraperApp:
     @patch('json.dump')
     def test_export_results(self, mock_json_dump, mock_open):
         """Test exporting results to file."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         results = {
@@ -277,7 +277,7 @@ class TestWebsiteScraperApp:
     @patch('builtins.open', side_effect=IOError("Permission denied"))
     def test_export_results_failure(self, mock_open):
         """Test export failure handling."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         results = {'items': [], 'total_scraped': 0}
@@ -291,7 +291,7 @@ class TestWebsiteScraperApp:
     
     def test_display_sample_items(self):
         """Test displaying sample scraped items."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         items = [
@@ -312,7 +312,7 @@ class TestWebsiteScraperApp:
     
     def test_display_sample_items_long_values(self):
         """Test displaying items with long field values."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         long_description = "A" * 150  # Longer than 100 characters
@@ -333,7 +333,7 @@ class TestWebsiteScraperApp:
     @patch('json.dump')
     def test_save_session_history(self, mock_json_dump, mock_open):
         """Test saving session history to file."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         # Add some history entries
@@ -358,7 +358,7 @@ class TestWebsiteScraperApp:
     
     def test_toggle_debug_mode(self):
         """Test debug mode toggling."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         # Initially debug mode should be False
@@ -379,8 +379,8 @@ class TestWebsiteScraperApp:
 class TestMainApplicationIntegration:
     """Integration tests for the complete application workflow."""
     
-    @patch('website_scraper_tool.main.Prompt.ask')
-    @patch('website_scraper_tool.main.Confirm.ask')
+    @patch('atomic_scraper_tool.main.Prompt.ask')
+    @patch('atomic_scraper_tool.main.Confirm.ask')
     def test_complete_scraping_workflow(self, mock_confirm, mock_prompt):
         """Test complete workflow from user input to results."""
         # Mock user inputs
@@ -400,11 +400,11 @@ class TestMainApplicationIntegration:
         ]
         
         # Create app with mocked components
-        app = WebsiteScraperApp()
+        app = AtomicScraperApp()
         app.console = Mock()
         
         # Mock scraper tool response
-        mock_scraping_result = Mock(spec=WebsiteScraperOutputSchema)
+        mock_scraping_result = Mock(spec=AtomicScraperOutputSchema)
         mock_scraping_result.results = {
             'items': [
                 {
@@ -435,7 +435,7 @@ class TestMainApplicationIntegration:
         # Verify scraper was called
         app.scraper_tool.run.assert_called_once()
     
-    @patch('website_scraper_tool.main.Prompt.ask')
+    @patch('atomic_scraper_tool.main.Prompt.ask')
     def test_menu_navigation(self, mock_prompt):
         """Test navigation through different menu options."""
         # Mock user inputs for different menu options
@@ -448,7 +448,7 @@ class TestMainApplicationIntegration:
             "7"   # Exit
         ]
         
-        app = WebsiteScraperApp()
+        app = AtomicScraperApp()
         app.console = Mock()
         
         # Add some mock history
@@ -461,7 +461,7 @@ class TestMainApplicationIntegration:
             }
         ]
         
-        with patch('website_scraper_tool.main.Confirm.ask', return_value=False):
+        with patch('atomic_scraper_tool.main.Confirm.ask', return_value=False):
             app.run()
         
         # Verify app completed all menu options
@@ -472,7 +472,7 @@ class TestMainApplicationIntegration:
     
     def test_error_handling_in_workflow(self):
         """Test error handling during scraping workflow."""
-        app = WebsiteScraperApp()
+        app = AtomicScraperApp()
         app.console = Mock()
         
         # Mock scraper tool to raise an exception
@@ -540,7 +540,7 @@ class TestConfigurationManagement:
     
     def test_modify_scraper_settings(self):
         """Test modifying scraper settings."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         # Test updating request_delay
@@ -557,7 +557,7 @@ class TestConfigurationManagement:
     
     def test_manage_schema_recipes_create(self):
         """Test creating a new schema recipe."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         # Initialize schema recipes if not exists
@@ -599,7 +599,7 @@ class TestConfigurationManagement:
     
     def test_set_quality_thresholds(self):
         """Test setting quality thresholds."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         # Initialize quality thresholds if not exists
@@ -629,7 +629,7 @@ class TestConfigurationManagement:
     @patch('json.dump')
     def test_save_configuration(self, mock_json_dump, mock_open):
         """Test saving configuration to file."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         # Call save configuration
@@ -645,7 +645,7 @@ class TestConfigurationManagement:
     
     def test_reset_to_defaults(self):
         """Test resetting configuration to defaults."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         # Modify some settings
@@ -664,7 +664,7 @@ class TestConfigurationManagement:
     
     def test_schema_recipe_export_import(self):
         """Test exporting and importing schema recipes."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         # Ensure schema recipes exist
@@ -712,7 +712,7 @@ class TestConfigurationManagement:
     def test_configuration_persistence(self):
         """Test configuration persistence across app restarts."""
         # Create first app instance and modify config
-        app1 = WebsiteScraperApp(config_path=self.config_file.name)
+        app1 = AtomicScraperApp(config_path=self.config_file.name)
         app1.config["scraper"]["request_delay"] = 3.0
         app1.config["scraper"]["max_results"] = 100
         
@@ -721,7 +721,7 @@ class TestConfigurationManagement:
             json.dump(app1.config, f, indent=2)
         
         # Create second app instance
-        app2 = WebsiteScraperApp(config_path=self.config_file.name)
+        app2 = AtomicScraperApp(config_path=self.config_file.name)
         
         # Verify configuration was persisted
         assert app2.config["scraper"]["request_delay"] == 3.0
@@ -729,7 +729,7 @@ class TestConfigurationManagement:
     
     def test_custom_extraction_rules_support(self):
         """Test support for custom extraction rules."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # Create custom extraction rules in schema recipe
         custom_recipe = {
@@ -771,14 +771,14 @@ class TestConfigurationManagement:
 class TestMainFunction:
     """Test cases for the main entry point function."""
     
-    @patch('website_scraper_tool.main.WebsiteScraperApp')
+    @patch('atomic_scraper_tool.main.AtomicScraperApp')
     @patch('sys.argv', ['main.py'])
     def test_main_function_default(self, mock_app_class):
         """Test main function with default arguments."""
         mock_app = Mock()
         mock_app_class.return_value = mock_app
         
-        from website_scraper_tool.main import main
+        from atomic_scraper_tool.main import main
         
         main()
         
@@ -786,14 +786,14 @@ class TestMainFunction:
         mock_app_class.assert_called_once_with(config_path=None)
         mock_app.run.assert_called_once()
     
-    @patch('website_scraper_tool.main.WebsiteScraperApp')
+    @patch('atomic_scraper_tool.main.AtomicScraperApp')
     @patch('sys.argv', ['main.py', '--config', 'test.json', '--debug'])
     def test_main_function_with_args(self, mock_app_class):
         """Test main function with command line arguments."""
         mock_app = Mock()
         mock_app_class.return_value = mock_app
         
-        from website_scraper_tool.main import main
+        from atomic_scraper_tool.main import main
         
         main()
         
@@ -806,7 +806,7 @@ class TestMainFunction:
         # Verify app was run
         mock_app.run.assert_called_once()
     
-    @patch('website_scraper_tool.main.WebsiteScraperApp')
+    @patch('atomic_scraper_tool.main.AtomicScraperApp')
     @patch('sys.argv', ['main.py'])
     def test_main_function_keyboard_interrupt(self, mock_app_class):
         """Test main function handling keyboard interrupt."""
@@ -814,20 +814,20 @@ class TestMainFunction:
         mock_app.run.side_effect = KeyboardInterrupt()
         mock_app_class.return_value = mock_app
         
-        from website_scraper_tool.main import main
+        from atomic_scraper_tool.main import main
         
         with patch('builtins.print') as mock_print:
             main()
             mock_print.assert_called_with("\n👋 Goodbye!")
     
-    @patch('website_scraper_tool.main.WebsiteScraperApp')
+    @patch('atomic_scraper_tool.main.AtomicScraperApp')
     @patch('sys.argv', ['main.py'])
     @patch('sys.exit')
     def test_main_function_exception(self, mock_exit, mock_app_class):
         """Test main function handling general exceptions."""
         mock_app_class.side_effect = Exception("Initialization error")
         
-        from website_scraper_tool.main import main
+        from atomic_scraper_tool.main import main
         
         with patch('builtins.print') as mock_print:
             main()

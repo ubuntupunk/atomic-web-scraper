@@ -1,9 +1,9 @@
 """
-Agents module for the website scraper tool.
+Agents module for the Atomic Scraper Tool.
 
-Contains the main scraper planning agent and related agent components.
+Contains the AI-powered scraper planning agent and related intelligent components.
 """
 
-from .scraper_planning_agent import ScraperPlanningAgent
+from .scraper_planning_agent import AtomicScraperPlanningAgent
 
-__all__ = ["ScraperPlanningAgent"]
+__all__ = ["AtomicScraperPlanningAgent"]

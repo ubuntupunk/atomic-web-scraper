@@ -10,13 +10,13 @@ from unittest.mock import Mock, patch
 import tempfile
 import os
 
-from website_scraper_tool.testing.mock_website import MockWebsiteGenerator, WebsiteType
-from website_scraper_tool.testing.test_scenarios import ScenarioGenerator, ScenarioType
-from website_scraper_tool.tools.website_scraper_tool import WebsiteScraperTool
-from website_scraper_tool.agents.scraper_planning_agent import ScraperPlanningAgent
-from website_scraper_tool.compliance.robots_parser import RobotsParser
-from website_scraper_tool.compliance.rate_limiter import RateLimiter
-from website_scraper_tool.compliance.privacy_compliance import PrivacyComplianceChecker
+from atomic_scraper_tool.testing.mock_website import MockWebsiteGenerator, WebsiteType
+from atomic_scraper_tool.testing.test_scenarios import ScenarioGenerator, ScenarioType
+from atomic_scraper_tool.tools.atomic_scraper_tool import AtomicScraperTool
+from atomic_scraper_tool.agents.scraper_planning_agent import AtomicScraperPlanningAgent
+from atomic_scraper_tool.compliance.robots_parser import RobotsParser
+from atomic_scraper_tool.compliance.rate_limiter import RateLimiter
+from atomic_scraper_tool.compliance.privacy_compliance import PrivacyComplianceChecker
 
 
 class TestEndToEndWorkflows:
@@ -43,7 +43,7 @@ class TestEndToEndWorkflows:
         mock_get.return_value = mock_response
         
         # Create scraper tool
-        scraper_tool = WebsiteScraperTool()
+        scraper_tool = AtomicScraperTool()
         
         # Test scraping
         result = scraper_tool.run({
@@ -73,7 +73,7 @@ class TestEndToEndWorkflows:
         mock_get.return_value = mock_response
         
         # Create planning agent
-        planning_agent = ScraperPlanningAgent()
+        planning_agent = AtomicScraperPlanningAgent()
         
         # Test agent planning
         request = {
@@ -116,7 +116,7 @@ class TestEndToEndWorkflows:
             mock_response.raise_for_status.side_effect = Exception("Server Error")
             mock_get.return_value = mock_response
             
-            scraper_tool = WebsiteScraperTool()
+            scraper_tool = AtomicScraperTool()
             
             result = scraper_tool.run({
                 'url': 'https://example.com',
@@ -278,7 +278,7 @@ class TestConcurrentOperations:
         mock_response.headers = {'content-type': 'text/html'}
         mock_get.return_value = mock_response
         
-        from website_scraper_tool.compliance.rate_limiter import RateLimiter, RateLimitConfig
+        from atomic_scraper_tool.compliance.rate_limiter import RateLimiter, RateLimitConfig
         
         # Create rate limiter with short delays for testing
         config = RateLimitConfig(
@@ -340,8 +340,8 @@ class TestDataQualityIntegration:
         mock_response.headers = {'content-type': 'text/html'}
         mock_get.return_value = mock_response
         
-        from website_scraper_tool.extraction.quality_analyzer import QualityAnalyzer
-        from website_scraper_tool.extraction.data_processor import DataProcessor
+        from atomic_scraper_tool.extraction.quality_analyzer import QualityAnalyzer
+        from atomic_scraper_tool.extraction.data_processor import DataProcessor
         
         # Create quality analyzer and data processor
         quality_analyzer = QualityAnalyzer()

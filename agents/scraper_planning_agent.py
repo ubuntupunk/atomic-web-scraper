@@ -1,7 +1,8 @@
 """
-Scraper Planning Agent for the website scraper tool.
+Atomic Scraper Planning Agent - AI-Powered Scraping Strategy Generation
 
-Main conversational agent that interprets user requests and coordinates scraping operations.
+Next-generation conversational agent that interprets natural language requests
+and coordinates intelligent scraping operations with dynamic strategy generation.
 """
 
 from typing import Dict, Any, Optional, List
@@ -14,8 +15,8 @@ from ..models.base_models import ScrapingStrategy
 from ..models.schema_models import SchemaRecipe
 
 
-class ScraperAgentInputSchema(BaseIOSchema):
-    """Input schema for the scraper planning agent."""
+class AtomicScraperAgentInputSchema(BaseIOSchema):
+    """Input schema for the atomic scraper planning agent."""
     
     request: str = Field(..., description="Natural language scraping request")
     target_url: str = Field(..., description="Website URL to scrape")
@@ -23,8 +24,8 @@ class ScraperAgentInputSchema(BaseIOSchema):
     quality_threshold: float = Field(50.0, ge=0.0, le=100.0, description="Minimum quality score")
 
 
-class ScraperAgentOutputSchema(BaseIOSchema):
-    """Output schema for the scraper planning agent."""
+class AtomicScraperAgentOutputSchema(BaseIOSchema):
+    """Output schema for the atomic scraper planning agent."""
     
     scraping_plan: str = Field(..., description="Human-readable scraping plan")
     strategy: Dict[str, Any] = Field(..., description="Generated scraping strategy")
@@ -33,12 +34,12 @@ class ScraperAgentOutputSchema(BaseIOSchema):
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence in the plan")
 
 
-class ScrapingContextProvider(SystemPromptContextProviderBase):
-    """Context provider for scraping strategy planning."""
+class AtomicScrapingContextProvider(SystemPromptContextProviderBase):
+    """Context provider for atomic scraper strategy planning."""
     
     def __init__(self):
-        """Initialize the scraping context provider."""
-        super().__init__(title="Website Scraping Capabilities")
+        """Initialize the atomic scraping context provider."""
+        super().__init__(title="Atomic Scraper Capabilities")
     
     def get_info(self) -> str:
         """Provide context about scraping capabilities and strategies."""
@@ -71,12 +72,13 @@ class ScrapingContextProvider(SystemPromptContextProviderBase):
 - Consider pagination and dynamic content loading"""
 
 
-class ScraperPlanningAgent(BaseAgent):
+class AtomicScraperPlanningAgent(BaseAgent):
     """
-    Main conversational agent for website scraping planning.
+    Next-Generation AI-Powered Scraping Planning Agent.
     
-    This agent interprets natural language requests, analyzes target websites,
-    and generates appropriate scraping strategies and schema recipes.
+    This intelligent agent interprets natural language requests, analyzes target websites,
+    and generates optimal scraping strategies with dynamic schema recipes using advanced
+    AI-powered decision making.
     """
     
     def __init__(self, config: BaseAgentConfig):
@@ -87,7 +89,7 @@ class ScraperPlanningAgent(BaseAgent):
             config: Agent configuration with client and model settings
         """
         # Set up system prompt generator with scraping context
-        context_providers = {"scraping_context": ScrapingContextProvider()}
+        context_providers = {"scraping_context": AtomicScrapingContextProvider()}
         system_prompt_generator = SystemPromptGenerator(
             background=[
                 "You are an expert website scraping planning agent.",
@@ -113,13 +115,13 @@ class ScraperPlanningAgent(BaseAgent):
         )
         
         # Update config with our schemas and system prompt generator
-        config.input_schema = ScraperAgentInputSchema
-        config.output_schema = ScraperAgentOutputSchema
+        config.input_schema = AtomicScraperAgentInputSchema
+        config.output_schema = AtomicScraperAgentOutputSchema
         config.system_prompt_generator = system_prompt_generator
         
         super().__init__(config)
     
-    def run(self, input_data: ScraperAgentInputSchema) -> ScraperAgentOutputSchema:
+    def run(self, input_data: AtomicScraperAgentInputSchema) -> AtomicScraperAgentOutputSchema:
         """
         Process scraping request and generate plan.
         
@@ -172,7 +174,7 @@ class ScraperPlanningAgent(BaseAgent):
                 schema_recipe
             )
             
-            return ScraperAgentOutputSchema(
+            return AtomicScraperAgentOutputSchema(
                 scraping_plan=scraping_plan,
                 strategy=strategy.model_dump(),
                 schema_recipe=schema_recipe.model_dump(),
@@ -275,7 +277,7 @@ class ScraperPlanningAgent(BaseAgent):
         self, 
         analysis: 'WebsiteStructureAnalysis', 
         parsed_request: Dict[str, Any], 
-        input_data: ScraperAgentInputSchema
+        input_data: AtomicScraperAgentInputSchema
     ) -> ScrapingStrategy:
         """Generate optimal scraping strategy."""
         from ..analysis.strategy_generator import StrategyGenerator, StrategyContext
@@ -300,7 +302,7 @@ class ScraperPlanningAgent(BaseAgent):
         self, 
         analysis: 'WebsiteStructureAnalysis', 
         parsed_request: Dict[str, Any], 
-        input_data: ScraperAgentInputSchema
+        input_data: AtomicScraperAgentInputSchema
     ) -> 'SchemaRecipe':
         """Generate dynamic schema recipe."""
         from ..analysis.schema_recipe_generator import SchemaRecipeGenerator, SchemaGenerationContext
@@ -330,7 +332,7 @@ class ScraperPlanningAgent(BaseAgent):
     def _create_basic_schema_recipe(
         self, 
         parsed_request: Dict[str, Any], 
-        input_data: ScraperAgentInputSchema
+        input_data: AtomicScraperAgentInputSchema
     ) -> 'SchemaRecipe':
         """Create a basic schema recipe based on parsed request."""
         from ..models.schema_models import SchemaRecipe, FieldDefinition
@@ -962,9 +964,9 @@ class ScraperPlanningAgent(BaseAgent):
         
         return confidence
     
-    def _handle_error(self, error_message: str, input_data: ScraperAgentInputSchema) -> ScraperAgentOutputSchema:
+    def _handle_error(self, error_message: str, input_data: AtomicScraperAgentInputSchema) -> AtomicScraperAgentOutputSchema:
         """Handle errors gracefully by returning a basic response."""
-        return ScraperAgentOutputSchema(
+        return AtomicScraperAgentOutputSchema(
             scraping_plan=f"Error occurred while generating scraping plan: {error_message}",
             strategy={
                 "scrape_type": "list",

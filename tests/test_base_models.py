@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 from pydantic import ValidationError
 
-from website_scraper_tool.models.base_models import (
+from atomic_scraper_tool.models.base_models import (
     ScrapingStrategy,
     ScrapedItem,
     ScrapingResult,

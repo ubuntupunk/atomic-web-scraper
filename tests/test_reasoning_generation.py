@@ -8,9 +8,9 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 from typing import Dict, Any
 
-from website_scraper_tool.agents.scraper_planning_agent import ScraperPlanningAgent, ScraperAgentInputSchema
-from website_scraper_tool.models.base_models import ScrapingStrategy
-from website_scraper_tool.models.schema_models import SchemaRecipe, FieldDefinition
+from atomic_scraper_tool.agents.scraper_planning_agent import AtomicScraperPlanningAgent, AtomicScraperAgentInputSchema
+from atomic_scraper_tool.models.base_models import ScrapingStrategy
+from atomic_scraper_tool.models.schema_models import SchemaRecipe, FieldDefinition
 from atomic_agents.agents.base_agent import BaseAgentConfig
 
 
@@ -32,7 +32,7 @@ class TestReasoningGeneration:
         self.mock_config.temperature = None
         
         # Create agent instance
-        self.agent = ScraperPlanningAgent(self.mock_config)
+        self.agent = AtomicScraperPlanningAgent(self.mock_config)
         
         # Create test data
         self.test_parsed_request = {
@@ -439,7 +439,7 @@ class TestConfidenceScoring:
         self.mock_config.system_role = None
         self.mock_config.model_api_parameters = {}
         self.mock_config.temperature = None
-        self.agent = ScraperPlanningAgent(self.mock_config)
+        self.agent = AtomicScraperPlanningAgent(self.mock_config)
     
     def test_confidence_perfect_scenario(self):
         """Test confidence with perfect inputs."""

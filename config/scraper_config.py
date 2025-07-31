@@ -1,14 +1,15 @@
 """
-Configuration management classes for the website scraper tool.
+Configuration management classes for the Atomic Scraper Tool.
 
-Provides centralized configuration management with validation and defaults.
+Provides centralized configuration management with validation and defaults
+for the next-generation intelligent web scraping tool.
 """
 
 import json
 import os
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Union
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from atomic_agents.lib.base.base_tool import BaseToolConfig
 
 from ..models.schema_models import SchemaRecipe
@@ -16,15 +17,15 @@ from ..models.extraction_models import ExtractionRule
 from ..core.exceptions import ConfigurationError
 
 
-class WebsiteScraperConfig(BaseToolConfig):
-    """Configuration for the website scraper tool."""
+class AtomicScraperConfig(BaseToolConfig):
+    """Configuration for the Atomic Scraper Tool."""
     
     # Network settings
     base_url: str = Field(..., description="Base URL for scraping")
     request_delay: float = Field(1.0, ge=0.1, le=10.0, description="Delay between requests in seconds")
     timeout: int = Field(30, ge=5, le=300, description="Request timeout in seconds")
     user_agent: str = Field(
-        "WebsiteScraperTool/1.0 (+https://github.com/atomic-agents/website-scraper-tool)",
+        "AtomicScraperTool/1.0 (+https://github.com/atomic-agents/atomic-scraper-tool)",
         description="User agent string for requests"
     )
     
@@ -41,7 +42,8 @@ class WebsiteScraperConfig(BaseToolConfig):
     respect_robots_txt: bool = Field(True, description="Whether to respect robots.txt")
     enable_rate_limiting: bool = Field(True, description="Whether to enable rate limiting")
     
-    @validator('base_url')
+    @field_validator('base_url')
+    @classmethod
     def validate_base_url(cls, v):
         """Validate that base_url is a valid URL."""
         if not v.startswith(('http://', 'https://')):
@@ -50,7 +52,7 @@ class WebsiteScraperConfig(BaseToolConfig):
 
 
 class ScraperConfiguration:
-    """Centralized configuration management for the website scraper tool."""
+    """Centralized configuration management for the Atomic Scraper Tool."""
     
     def __init__(self, config_file: Optional[str] = None, config_dir: Optional[str] = None):
         """
@@ -60,7 +62,7 @@ class ScraperConfiguration:
             config_file: Path to main configuration file
             config_dir: Directory containing configuration files
         """
-        self.config_dir = Path(config_dir) if config_dir else Path.home() / ".website_scraper_tool"
+        self.config_dir = Path(config_dir) if config_dir else Path.home() / ".atomic_scraper_tool"
         self.config_file = Path(config_file) if config_file else self.config_dir / "config.json"
         
         # Ensure config directory exists
@@ -85,7 +87,7 @@ class ScraperConfiguration:
                     "respect_robots_txt": True,
                     "enable_rate_limiting": True
                 },
-                "user_agent": "WebsiteScraperTool/1.0 (+https://github.com/atomic-agents/website-scraper-tool)",
+                "user_agent": "AtomicScraperTool/1.0 (+https://github.com/atomic-agents/atomic-scraper-tool)",
                 "schema_recipes_dir": str(self.config_dir / "schema_recipes"),
                 "extraction_rules_dir": str(self.config_dir / "extraction_rules")
             }
@@ -186,7 +188,7 @@ class ScraperConfiguration:
             with open(recipe_file, 'w') as f:
                 json.dump(recipe_data, f, indent=2)
     
-    def get_tool_config(self, base_url: str, **overrides) -> WebsiteScraperConfig:
+    def get_tool_config(self, base_url: str, **overrides) -> AtomicScraperConfig:
         """
         Get tool configuration for a specific URL.
         
@@ -195,7 +197,7 @@ class ScraperConfiguration:
             **overrides: Configuration overrides
             
         Returns:
-            Configured WebsiteScraperConfig instance
+            Configured AtomicScraperConfig instance
         """
         config_data = {
             "base_url": base_url,
@@ -204,7 +206,7 @@ class ScraperConfiguration:
         }
         
         try:
-            return WebsiteScraperConfig(**config_data)
+            return AtomicScraperConfig(**config_data)
         except ValueError as e:
             raise ConfigurationError(f"Invalid configuration: {e}")
     

@@ -1,6 +1,6 @@
-# Website Scraper Tool
+# Atomic Scraper Tool
 
-A comprehensive, ethical web scraping tool built with the Atomic Agents framework. This tool provides intelligent website analysis, dynamic schema generation, and compliant data extraction capabilities.
+Next-generation intelligent web scraping tool built with the Atomic Agents framework. This AI-powered tool provides advanced natural language processing, dynamic strategy generation, and ethical data extraction capabilities with unprecedented intelligence and ease of use.
 
 ## Features
 
@@ -22,10 +22,10 @@ pip install -r requirements.txt
 ### Basic Usage
 
 ```python
-from website_scraper_tool.main import WebsiteScraperApp
+from atomic_scraper_tool.main import AtomicScraperApp
 
 # Initialize the application
-app = WebsiteScraperApp()
+app = AtomicScraperApp()
 
 # Start interactive chat interface
 app.run()
@@ -34,11 +34,11 @@ app.run()
 ### Programmatic Usage
 
 ```python
-from website_scraper_tool.tools.website_scraper_tool import WebsiteScraperTool
-from website_scraper_tool.models.schema_models import SchemaRecipe
+from atomic_scraper_tool.tools.atomic_scraper_tool import AtomicScraperTool
+from atomic_scraper_tool.models.schema_models import SchemaRecipe
 
 # Create scraper tool
-scraper = WebsiteScraperTool()
+scraper = AtomicScraperTool()
 
 # Define scraping parameters
 scraping_params = {
@@ -70,10 +70,10 @@ for item in result.results['items']:
 
 ## Architecture
 
-The Website Scraper Tool is built with a modular architecture:
+The Atomic Scraper Tool is built with a modular, next-generation architecture:
 
 ```
-website_scraper_tool/
+atomic_scraper_tool/
 ├── agents/                 # AI agents for planning and coordination
 ├── analysis/              # Website analysis and strategy generation
 ├── compliance/            # Ethical scraping compliance features
@@ -90,12 +90,12 @@ website_scraper_tool/
 
 ### 1. Scraper Planning Agent
 
-The `ScraperPlanningAgent` interprets natural language requests and generates scraping strategies:
+The `AtomicScraperPlanningAgent` interprets natural language requests and generates scraping strategies:
 
 ```python
-from website_scraper_tool.agents.scraper_planning_agent import ScraperPlanningAgent
+from atomic_scraper_tool.agents.scraper_planning_agent import AtomicScraperPlanningAgent
 
-agent = ScraperPlanningAgent()
+agent = AtomicScraperPlanningAgent()
 
 request = {
     'url': 'https://example.com',
@@ -111,7 +111,7 @@ print(strategy['reasoning'])
 Automatically analyzes website structure and identifies content patterns:
 
 ```python
-from website_scraper_tool.analysis.website_analyzer import WebsiteAnalyzer
+from atomic_scraper_tool.analysis.website_analyzer import WebsiteAnalyzer
 
 analyzer = WebsiteAnalyzer()
 analysis = analyzer.analyze_website('https://example.com')
@@ -125,7 +125,7 @@ print(f"Pagination detected: {analysis.has_pagination}")
 Generates dynamic extraction schemas based on website analysis:
 
 ```python
-from website_scraper_tool.analysis.schema_recipe_generator import SchemaRecipeGenerator
+from atomic_scraper_tool.analysis.schema_recipe_generator import SchemaRecipeGenerator
 
 generator = SchemaRecipeGenerator()
 schema = generator.generate_schema_recipe(analysis_result)
@@ -138,7 +138,7 @@ print(f"Generated {len(schema.fields)} extraction fields")
 Extracts structured data using CSS selectors and XPath:
 
 ```python
-from website_scraper_tool.extraction.content_extractor import ContentExtractor
+from atomic_scraper_tool.extraction.content_extractor import ContentExtractor
 
 extractor = ContentExtractor()
 extracted_data = extractor.extract_content(html, extraction_rules)
@@ -151,7 +151,7 @@ print(f"Extracted {len(extracted_data)} items")
 Assesses data quality and completeness:
 
 ```python
-from website_scraper_tool.extraction.quality_analyzer import QualityAnalyzer
+from atomic_scraper_tool.extraction.quality_analyzer import QualityAnalyzer
 
 analyzer = QualityAnalyzer()
 quality_score = analyzer.calculate_quality_score(extracted_data, schema_recipe)
@@ -164,7 +164,7 @@ print(f"Data quality score: {quality_score:.2f}")
 ### Robots.txt Compliance
 
 ```python
-from website_scraper_tool.compliance.robots_parser import RobotsParser
+from atomic_scraper_tool.compliance.robots_parser import RobotsParser
 
 parser = RobotsParser(user_agent="MyBot/1.0")
 
@@ -180,7 +180,7 @@ print(f"Recommended crawl delay: {delay} seconds")
 ### Rate Limiting
 
 ```python
-from website_scraper_tool.compliance.rate_limiter import RateLimiter, RateLimitConfig
+from atomic_scraper_tool.compliance.rate_limiter import RateLimiter, RateLimitConfig
 
 config = RateLimitConfig(
     default_delay=1.0,
@@ -198,7 +198,7 @@ print(f"Applied delay: {delay} seconds")
 ### Privacy Compliance
 
 ```python
-from website_scraper_tool.compliance.privacy_compliance import PrivacyComplianceChecker
+from atomic_scraper_tool.compliance.privacy_compliance import PrivacyComplianceChecker
 
 checker = PrivacyComplianceChecker()
 
@@ -215,21 +215,21 @@ if is_compliant:
 ### Basic Configuration
 
 ```python
-from website_scraper_tool.config.scraper_config import ScraperConfig
+from atomic_scraper_tool.config.scraper_config import AtomicScraperConfig
 
-config = ScraperConfig(
+config = AtomicScraperConfig(
     base_url="https://example.com",
     max_concurrent_requests=5,
     request_delay=1.0,
     timeout=30,
-    user_agent="WebScraperTool/1.0"
+    user_agent="AtomicScraperTool/1.0"
 )
 ```
 
 ### Advanced Configuration
 
 ```python
-config = ScraperConfig(
+config = AtomicScraperConfig(
     # Request settings
     max_concurrent_requests=3,
     request_delay=2.0,
@@ -257,7 +257,7 @@ config = ScraperConfig(
 ### Mock Website Generation
 
 ```python
-from website_scraper_tool.testing.mock_website import MockWebsiteGenerator
+from atomic_scraper_tool.testing.mock_website import MockWebsiteGenerator
 
 # Create mock e-commerce site
 mock_site = MockWebsiteGenerator.create_ecommerce_site(num_products=50)
@@ -273,7 +273,7 @@ urls = mock_site.get_all_urls()
 ### Test Scenarios
 
 ```python
-from website_scraper_tool.testing.test_scenarios import ScenarioGenerator, ScenarioType
+from atomic_scraper_tool.testing.test_scenarios import ScenarioGenerator, ScenarioType
 
 generator = ScenarioGenerator()
 
@@ -293,7 +293,7 @@ for url in scenario.test_urls:
 The tool provides comprehensive error handling:
 
 ```python
-from website_scraper_tool.core.exceptions import ScrapingError
+from atomic_scraper_tool.core.exceptions import ScrapingError
 
 try:
     result = scraper.run(scraping_params)
@@ -317,10 +317,10 @@ except ScrapingError as e:
 
 ```python
 import asyncio
-from website_scraper_tool.tools.website_scraper_tool import WebsiteScraperTool
+from atomic_scraper_tool.tools.atomic_scraper_tool import AtomicScraperTool
 
 async def scrape_multiple_urls(urls):
-    scraper = WebsiteScraperTool()
+    scraper = AtomicScraperTool()
     tasks = []
     
     for url in urls:
@@ -339,13 +339,13 @@ async def scrape_multiple_urls(urls):
 
 ```python
 # Enable streaming for large datasets
-config = ScraperConfig(
+config = AtomicScraperConfig(
     enable_streaming=True,
     batch_size=100,
     memory_limit_mb=500
 )
 
-scraper = WebsiteScraperTool(config=config)
+scraper = AtomicScraperTool(config=config)
 ```
 
 ## Best Practices
@@ -382,7 +382,7 @@ scraper = WebsiteScraperTool(config=config)
 
 ### Core Classes
 
-#### WebsiteScraperTool
+#### AtomicScraperTool
 
 Main scraping tool class.
 
@@ -391,7 +391,7 @@ Main scraping tool class.
 - `validate_inputs(input_data)`: Validate input parameters
 - `get_supported_formats()`: Get supported output formats
 
-#### ScraperPlanningAgent
+#### AtomicScraperPlanningAgent
 
 AI agent for scraping strategy planning.
 

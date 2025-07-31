@@ -7,13 +7,13 @@ import threading
 from unittest.mock import Mock, patch
 import pytest
 
-from website_scraper_tool.compliance.rate_limiter import (
+from atomic_scraper_tool.compliance.rate_limiter import (
     RateLimiter,
     RateLimitConfig,
     DomainStats,
     RespectfulCrawler
 )
-from website_scraper_tool.core.exceptions import ScrapingError
+from atomic_scraper_tool.core.exceptions import ScrapingError
 
 
 class TestRateLimitConfig:

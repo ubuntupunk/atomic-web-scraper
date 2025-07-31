@@ -10,8 +10,8 @@ import tempfile
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 
-from website_scraper_tool.main import WebsiteScraperApp
-from website_scraper_tool.config.scraper_config import WebsiteScraperConfig
+from atomic_scraper_tool.main import AtomicScraperApp
+from atomic_scraper_tool.config.scraper_config import AtomicScraperConfig
 
 
 class TestConfigurationManagement:
@@ -61,7 +61,7 @@ class TestConfigurationManagement:
     
     def test_configuration_loading(self):
         """Test configuration loading from file."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # Verify configuration was loaded correctly
         assert app.config["scraper"]["base_url"] == "https://test.com"
@@ -71,7 +71,7 @@ class TestConfigurationManagement:
     
     def test_default_configuration(self):
         """Test default configuration when no file is provided."""
-        app = WebsiteScraperApp()
+        app = AtomicScraperApp()
         
         # Verify default values
         assert app.config["scraper"]["base_url"] == "https://example.com"
@@ -81,20 +81,20 @@ class TestConfigurationManagement:
     
     def test_configuration_merging(self):
         """Test configuration merging with defaults."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # User config should override defaults
         assert app.config["scraper"]["base_url"] == "https://test.com"
         assert app.config["scraper"]["request_delay"] == 0.1
         
         # Defaults should be preserved for unspecified values
-        assert app.config["scraper"]["user_agent"] == "WebsiteScraperTool/1.0"
+        assert app.config["scraper"]["user_agent"] == "AtomicScraperTool/1.0"
         assert app.config["scraper"]["respect_robots_txt"] is True
     
-    @patch('website_scraper_tool.main.Prompt.ask')
+    @patch('atomic_scraper_tool.main.Prompt.ask')
     def test_modify_scraper_settings(self, mock_prompt):
         """Test modifying scraper settings."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         # Mock user input for modifying request_delay
@@ -113,7 +113,7 @@ class TestConfigurationManagement:
     
     def test_schema_recipe_creation(self):
         """Test creating a new schema recipe."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # Create a new recipe programmatically
         new_recipe = {
@@ -150,7 +150,7 @@ class TestConfigurationManagement:
     
     def test_quality_thresholds_management(self):
         """Test setting quality thresholds."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # Update thresholds
         new_thresholds = {
@@ -170,7 +170,7 @@ class TestConfigurationManagement:
     @patch('json.dump')
     def test_save_configuration(self, mock_json_dump, mock_open):
         """Test saving configuration to file."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         app.console = Mock()
         
         # Call save configuration
@@ -186,7 +186,7 @@ class TestConfigurationManagement:
     
     def test_reset_to_defaults(self):
         """Test resetting configuration to defaults."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # Modify some settings
         app.config["scraper"]["request_delay"] = 5.0
@@ -204,7 +204,7 @@ class TestConfigurationManagement:
     
     def test_schema_recipe_validation(self):
         """Test schema recipe validation."""
-        app = WebsiteScraperApp()
+        app = AtomicScraperApp()
         
         # Test valid recipe
         valid_recipe = {
@@ -236,7 +236,7 @@ class TestConfigurationManagement:
     def test_configuration_persistence(self):
         """Test configuration persistence across app restarts."""
         # Create first app instance and modify config
-        app1 = WebsiteScraperApp(config_path=self.config_file.name)
+        app1 = AtomicScraperApp(config_path=self.config_file.name)
         app1.config["scraper"]["request_delay"] = 3.0
         app1.config["scraper"]["max_results"] = 100
         
@@ -245,7 +245,7 @@ class TestConfigurationManagement:
             json.dump(app1.config, f, indent=2)
         
         # Create second app instance
-        app2 = WebsiteScraperApp(config_path=self.config_file.name)
+        app2 = AtomicScraperApp(config_path=self.config_file.name)
         
         # Verify configuration was persisted
         assert app2.config["scraper"]["request_delay"] == 3.0
@@ -253,7 +253,7 @@ class TestConfigurationManagement:
     
     def test_schema_recipe_export_import(self):
         """Test exporting and importing schema recipes."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # Create a test recipe
         test_recipe = {
@@ -284,7 +284,7 @@ class TestConfigurationManagement:
     
     def test_custom_extraction_rules_support(self):
         """Test support for custom extraction rules."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # Create custom extraction rules in schema recipe
         custom_recipe = {
@@ -324,7 +324,7 @@ class TestConfigurationManagement:
     
     def test_configuration_validation(self):
         """Test configuration validation and error handling."""
-        app = WebsiteScraperApp()
+        app = AtomicScraperApp()
         
         # Test invalid quality threshold values
         invalid_thresholds = {
@@ -347,8 +347,8 @@ class TestConfigurationManagement:
         assert app.config["quality_thresholds"]["minimum_overall"] == 60.0
     
     def test_scraper_config_integration(self):
-        """Test integration with WebsiteScraperConfig."""
-        app = WebsiteScraperApp(config_path=self.config_file.name)
+        """Test integration with AtomicScraperConfig."""
+        app = AtomicScraperApp(config_path=self.config_file.name)
         
         # Verify scraper tool was initialized with correct config
         assert app.scraper_tool is not None
@@ -358,7 +358,7 @@ class TestConfigurationManagement:
     
     def test_configuration_sections_completeness(self):
         """Test that all required configuration sections are present."""
-        app = WebsiteScraperApp()
+        app = AtomicScraperApp()
         
         # Verify all required sections exist
         required_sections = ["scraper", "agent", "interface"]

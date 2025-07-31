@@ -1,5 +1,5 @@
 """
-Unit tests for the WebsiteScraperTool class.
+Unit tests for the AtomicScraperTool class.
 
 Tests tool initialization, configuration validation, and basic functionality.
 """
@@ -8,23 +8,23 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 from typing import Dict, Any
 
-from website_scraper_tool.tools.website_scraper_tool import (
-    WebsiteScraperTool, 
-    WebsiteScraperInputSchema, 
-    WebsiteScraperOutputSchema
+from atomic_scraper_tool.tools.atomic_scraper_tool import (
+    AtomicScraperTool, 
+    AtomicScraperInputSchema, 
+    AtomicScraperOutputSchema
 )
-from website_scraper_tool.config.scraper_config import WebsiteScraperConfig
-from website_scraper_tool.models.base_models import ScrapingStrategy
-from website_scraper_tool.models.schema_models import SchemaRecipe, FieldDefinition
-from website_scraper_tool.core.exceptions import NetworkError
+from atomic_scraper_tool.config.scraper_config import AtomicScraperConfig
+from atomic_scraper_tool.models.base_models import ScrapingStrategy
+from atomic_scraper_tool.models.schema_models import SchemaRecipe, FieldDefinition
+from atomic_scraper_tool.core.exceptions import NetworkError
 
 
-class TestWebsiteScraperInputSchema:
-    """Test cases for WebsiteScraperInputSchema."""
+class TestAtomicScraperInputSchema:
+    """Test cases for AtomicScraperInputSchema."""
     
     def test_valid_input_schema(self):
         """Test valid input schema creation."""
-        input_data = WebsiteScraperInputSchema(
+        input_data = AtomicScraperInputSchema(
             target_url="https://example.com",
             strategy={
                 "scrape_type": "list",
@@ -49,7 +49,7 @@ class TestWebsiteScraperInputSchema:
     def test_invalid_url_format(self):
         """Test validation of invalid URL format."""
         with pytest.raises(ValueError, match="Invalid URL format"):
-            WebsiteScraperInputSchema(
+            AtomicScraperInputSchema(
                 target_url="not-a-url",
                 strategy={"scrape_type": "list", "target_selectors": [".item"]},
                 schema_recipe={"fields": {}},
@@ -59,7 +59,7 @@ class TestWebsiteScraperInputSchema:
     def test_invalid_url_scheme(self):
         """Test validation of invalid URL scheme."""
         with pytest.raises(ValueError, match="URL scheme must be http or https"):
-            WebsiteScraperInputSchema(
+            AtomicScraperInputSchema(
                 target_url="ftp://example.com",
                 strategy={"scrape_type": "list", "target_selectors": [".item"]},
                 schema_recipe={"fields": {}},
@@ -69,7 +69,7 @@ class TestWebsiteScraperInputSchema:
     def test_empty_url(self):
         """Test validation of empty URL."""
         with pytest.raises(ValueError, match="target_url cannot be empty"):
-            WebsiteScraperInputSchema(
+            AtomicScraperInputSchema(
                 target_url="",
                 strategy={"scrape_type": "list", "target_selectors": [".item"]},
                 schema_recipe={"fields": {}},
@@ -77,19 +77,19 @@ class TestWebsiteScraperInputSchema:
             )
 
 
-class TestWebsiteScraperTool:
-    """Test cases for WebsiteScraperTool."""
+class TestAtomicScraperTool:
+    """Test cases for AtomicScraperTool."""
     
     def test_tool_initialization_with_config(self):
         """Test tool initialization with provided config."""
-        config = WebsiteScraperConfig(
+        config = AtomicScraperConfig(
             base_url="https://test.com",
             request_delay=2.0,
             timeout=60,
             min_quality_score=70.0
         )
         
-        tool = WebsiteScraperTool(config=config)
+        tool = AtomicScraperTool(config=config)
         
         assert tool.config == config
         assert tool.request_timeout == 60
@@ -101,7 +101,7 @@ class TestWebsiteScraperTool:
     
     def test_tool_initialization_without_config(self):
         """Test tool initialization with default config."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         assert tool.config is not None
         assert tool.config.base_url == "https://example.com"
@@ -113,9 +113,9 @@ class TestWebsiteScraperTool:
     
     def test_validate_inputs_valid(self):
         """Test input validation with valid data."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
-        input_data = WebsiteScraperInputSchema(
+        input_data = AtomicScraperInputSchema(
             target_url="https://example.com",
             strategy={
                 "scrape_type": "list",
@@ -134,9 +134,9 @@ class TestWebsiteScraperTool:
     
     def test_validate_inputs_empty_strategy(self):
         """Test input validation with empty strategy."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
-        input_data = WebsiteScraperInputSchema(
+        input_data = AtomicScraperInputSchema(
             target_url="https://example.com",
             strategy={},
             schema_recipe={"fields": {}},
@@ -148,9 +148,9 @@ class TestWebsiteScraperTool:
     
     def test_validate_inputs_missing_strategy_fields(self):
         """Test input validation with missing required strategy fields."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
-        input_data = WebsiteScraperInputSchema(
+        input_data = AtomicScraperInputSchema(
             target_url="https://example.com",
             strategy={"scrape_type": "list"},  # Missing target_selectors
             schema_recipe={"fields": {}},
@@ -162,9 +162,9 @@ class TestWebsiteScraperTool:
     
     def test_validate_inputs_empty_schema_recipe(self):
         """Test input validation with empty schema recipe."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
-        input_data = WebsiteScraperInputSchema(
+        input_data = AtomicScraperInputSchema(
             target_url="https://example.com",
             strategy={"scrape_type": "list", "target_selectors": [".item"]},
             schema_recipe={},
@@ -176,9 +176,9 @@ class TestWebsiteScraperTool:
     
     def test_validate_inputs_missing_fields_in_schema(self):
         """Test input validation with missing fields in schema recipe."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
-        input_data = WebsiteScraperInputSchema(
+        input_data = AtomicScraperInputSchema(
             target_url="https://example.com",
             strategy={"scrape_type": "list", "target_selectors": [".item"]},
             schema_recipe={"name": "test"},  # Missing fields
@@ -190,7 +190,7 @@ class TestWebsiteScraperTool:
     
     def test_create_scraping_strategy_valid(self):
         """Test creating scraping strategy from valid dictionary."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         strategy_dict = {
             "scrape_type": "list",
@@ -213,7 +213,7 @@ class TestWebsiteScraperTool:
     
     def test_create_scraping_strategy_invalid(self):
         """Test creating scraping strategy from invalid dictionary."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         strategy_dict = {
             "scrape_type": "invalid_type",  # Invalid scrape type
@@ -225,7 +225,7 @@ class TestWebsiteScraperTool:
     
     def test_create_schema_recipe_valid(self):
         """Test creating schema recipe from valid dictionary."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         recipe_dict = {
             "name": "test_recipe",
@@ -264,7 +264,7 @@ class TestWebsiteScraperTool:
     
     def test_create_extraction_rules(self):
         """Test creating extraction rules from schema recipe."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         # Create a schema recipe with field definitions
         fields = {
@@ -307,10 +307,10 @@ class TestWebsiteScraperTool:
         assert title_rule.selector == "h1"
         assert title_rule.extraction_type == "text"  # Field type 'string' maps to extraction type 'text'
     
-    @patch('website_scraper_tool.tools.website_scraper_tool.requests.Session.get')
+    @patch('atomic_scraper_tool.tools.atomic_scraper_tool.requests.Session.get')
     def test_fetch_page_content_success(self, mock_get):
         """Test successful page content fetching."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         # Mock successful response
         mock_response = Mock()
@@ -327,10 +327,10 @@ class TestWebsiteScraperTool:
             allow_redirects=True
         )
     
-    @patch('website_scraper_tool.tools.website_scraper_tool.requests.Session.get')
+    @patch('atomic_scraper_tool.tools.atomic_scraper_tool.requests.Session.get')
     def test_fetch_page_content_network_error(self, mock_get):
         """Test page content fetching with network error."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         # Mock network error
         import requests
@@ -342,11 +342,11 @@ class TestWebsiteScraperTool:
     @patch('time.sleep')
     def test_apply_rate_limiting(self, mock_sleep):
         """Test rate limiting application."""
-        config = WebsiteScraperConfig(
+        config = AtomicScraperConfig(
             base_url="https://example.com",
             request_delay=2.5
         )
-        tool = WebsiteScraperTool(config=config)
+        tool = AtomicScraperTool(config=config)
         
         tool._apply_rate_limiting()
         
@@ -354,9 +354,9 @@ class TestWebsiteScraperTool:
     
     def test_generate_summary(self):
         """Test summary generation from scraping result."""
-        from website_scraper_tool.models.base_models import ScrapingResult, ScrapingStrategy, ScrapedItem
+        from atomic_scraper_tool.models.base_models import ScrapingResult, ScrapingStrategy, ScrapedItem
         
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         strategy = ScrapingStrategy(
             scrape_type="list",
@@ -393,9 +393,9 @@ class TestWebsiteScraperTool:
     
     def test_extract_quality_metrics(self):
         """Test quality metrics extraction from scraping result."""
-        from website_scraper_tool.models.base_models import ScrapingResult, ScrapingStrategy, ScrapedItem
+        from atomic_scraper_tool.models.base_models import ScrapingResult, ScrapingStrategy, ScrapedItem
         
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         strategy = ScrapingStrategy(
             scrape_type="list",
@@ -433,7 +433,7 @@ class TestWebsiteScraperTool:
     
     def test_get_tool_info(self):
         """Test getting tool information."""
-        config = WebsiteScraperConfig(
+        config = AtomicScraperConfig(
             base_url="https://test.com",
             request_delay=1.5,
             timeout=45,
@@ -441,11 +441,11 @@ class TestWebsiteScraperTool:
             max_results=150,
             min_quality_score=75.0
         )
-        tool = WebsiteScraperTool(config=config)
+        tool = AtomicScraperTool(config=config)
         
         info = tool.get_tool_info()
         
-        assert info['name'] == 'WebsiteScraperTool'
+        assert info['name'] == 'AtomicScraperTool'
         assert info['version'] == '1.0.0'
         assert 'description' in info
         assert info['config']['base_url'] == 'https://test.com'
@@ -459,7 +459,7 @@ class TestWebsiteScraperTool:
     
     def test_update_config(self):
         """Test configuration updates."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         original_delay = tool.config.request_delay
         original_timeout = tool.config.timeout
         
@@ -476,7 +476,7 @@ class TestWebsiteScraperTool:
     
     def test_update_config_user_agent(self):
         """Test user agent configuration update."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         new_user_agent = "TestBot/1.0"
         tool.update_config(user_agent=new_user_agent)
@@ -486,7 +486,7 @@ class TestWebsiteScraperTool:
     
     def test_get_error_stats(self):
         """Test getting error statistics."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         stats = tool.get_error_stats()
         
@@ -497,18 +497,18 @@ class TestWebsiteScraperTool:
     
     def test_reset_stats(self):
         """Test resetting statistics."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         # Should not raise any exception
         tool.reset_stats()
     
-    @patch('website_scraper_tool.tools.website_scraper_tool.WebsiteScraperTool._fetch_page_content')
-    @patch('website_scraper_tool.tools.website_scraper_tool.WebsiteScraperTool._extract_items_from_page')
+    @patch('atomic_scraper_tool.tools.atomic_scraper_tool.AtomicScraperTool._fetch_page_content')
+    @patch('atomic_scraper_tool.tools.atomic_scraper_tool.AtomicScraperTool._extract_items_from_page')
     def test_run_list_scraping_success(self, mock_extract_items, mock_fetch_content):
         """Test successful list scraping execution."""
-        from website_scraper_tool.models.base_models import ScrapedItem
+        from atomic_scraper_tool.models.base_models import ScrapedItem
         
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         # Mock HTML content
         mock_fetch_content.return_value = "<html><body><div class='item'>Item 1</div></body></html>"
@@ -521,7 +521,7 @@ class TestWebsiteScraperTool:
         )
         mock_extract_items.return_value = [mock_item]
         
-        input_data = WebsiteScraperInputSchema(
+        input_data = AtomicScraperInputSchema(
             target_url="https://example.com",
             strategy={
                 "scrape_type": "list",
@@ -546,20 +546,20 @@ class TestWebsiteScraperTool:
         
         result = tool.run(input_data)
         
-        assert isinstance(result, WebsiteScraperOutputSchema)
+        assert isinstance(result, AtomicScraperOutputSchema)
         assert result.results['total_scraped'] == 1
         assert len(result.results['items']) == 1
         assert result.results['items'][0]['data']['title'] == "Item 1"
         assert "Successfully scraped 1 items" in result.summary
         assert result.quality_metrics['average_quality_score'] == 85.0
     
-    @patch('website_scraper_tool.tools.website_scraper_tool.WebsiteScraperTool._fetch_page_content')
-    @patch('website_scraper_tool.tools.website_scraper_tool.WebsiteScraperTool._extract_items_from_page')
+    @patch('atomic_scraper_tool.tools.atomic_scraper_tool.AtomicScraperTool._fetch_page_content')
+    @patch('atomic_scraper_tool.tools.atomic_scraper_tool.AtomicScraperTool._extract_items_from_page')
     def test_run_detail_scraping_success(self, mock_extract_items, mock_fetch_content):
         """Test successful detail page scraping execution."""
-        from website_scraper_tool.models.base_models import ScrapedItem
+        from atomic_scraper_tool.models.base_models import ScrapedItem
         
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         # Mock HTML content
         mock_fetch_content.return_value = "<html><body><h1>Detail Page</h1></body></html>"
@@ -572,7 +572,7 @@ class TestWebsiteScraperTool:
         )
         mock_extract_items.return_value = [mock_item]
         
-        input_data = WebsiteScraperInputSchema(
+        input_data = AtomicScraperInputSchema(
             target_url="https://example.com/detail",
             strategy={
                 "scrape_type": "detail",
@@ -597,22 +597,22 @@ class TestWebsiteScraperTool:
         
         result = tool.run(input_data)
         
-        assert isinstance(result, WebsiteScraperOutputSchema)
+        assert isinstance(result, AtomicScraperOutputSchema)
         assert result.results['total_scraped'] == 1
         assert len(result.results['items']) == 1
         assert result.results['items'][0]['data']['title'] == "Detail Page"
         assert "92.5%" in result.summary
         assert result.quality_metrics['average_quality_score'] == 92.5
     
-    @patch('website_scraper_tool.tools.website_scraper_tool.WebsiteScraperTool._fetch_page_content')
+    @patch('atomic_scraper_tool.tools.atomic_scraper_tool.AtomicScraperTool._fetch_page_content')
     def test_run_scraping_with_network_error(self, mock_fetch_content):
         """Test scraping execution with network error."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         # Mock network error
         mock_fetch_content.side_effect = NetworkError("Connection failed", url="https://example.com")
         
-        input_data = WebsiteScraperInputSchema(
+        input_data = AtomicScraperInputSchema(
             target_url="https://example.com",
             strategy={
                 "scrape_type": "list",
@@ -636,7 +636,7 @@ class TestWebsiteScraperTool:
         
         result = tool.run(input_data)
         
-        assert isinstance(result, WebsiteScraperOutputSchema)
+        assert isinstance(result, AtomicScraperOutputSchema)
         assert result.results['total_scraped'] == 0
         assert len(result.results['items']) == 0
         assert len(result.results['errors']) > 0
@@ -645,9 +645,9 @@ class TestWebsiteScraperTool:
     
     def test_run_invalid_strategy_type(self):
         """Test scraping execution with invalid strategy type."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
-        input_data = WebsiteScraperInputSchema(
+        input_data = AtomicScraperInputSchema(
             target_url="https://example.com",
             strategy={
                 "scrape_type": "invalid_type",
@@ -669,19 +669,19 @@ class TestWebsiteScraperTool:
         
         result = tool.run(input_data)
         
-        assert isinstance(result, WebsiteScraperOutputSchema)
+        assert isinstance(result, AtomicScraperOutputSchema)
         assert result.results['total_scraped'] == 0
         assert len(result.results['errors']) > 0
         assert "Scraping failed" in result.summary
     
-    @patch('website_scraper_tool.tools.website_scraper_tool.WebsiteScraperTool._fetch_page_content')
-    @patch('website_scraper_tool.tools.website_scraper_tool.WebsiteScraperTool._extract_items_from_page')
-    @patch('website_scraper_tool.tools.website_scraper_tool.WebsiteScraperTool._find_next_page_url')
+    @patch('atomic_scraper_tool.tools.atomic_scraper_tool.AtomicScraperTool._fetch_page_content')
+    @patch('atomic_scraper_tool.tools.atomic_scraper_tool.AtomicScraperTool._extract_items_from_page')
+    @patch('atomic_scraper_tool.tools.atomic_scraper_tool.AtomicScraperTool._find_next_page_url')
     def test_run_list_scraping_with_pagination(self, mock_find_next, mock_extract_items, mock_fetch_content):
         """Test list scraping with pagination support."""
-        from website_scraper_tool.models.base_models import ScrapedItem
+        from atomic_scraper_tool.models.base_models import ScrapedItem
         
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         # Mock HTML content for multiple pages
         mock_fetch_content.side_effect = [
@@ -705,7 +705,7 @@ class TestWebsiteScraperTool:
         # Mock pagination - first call returns next page, second returns None
         mock_find_next.side_effect = ["https://example.com/page/2", None]
         
-        input_data = WebsiteScraperInputSchema(
+        input_data = AtomicScraperInputSchema(
             target_url="https://example.com",
             strategy={
                 "scrape_type": "list",
@@ -730,7 +730,7 @@ class TestWebsiteScraperTool:
         
         result = tool.run(input_data)
         
-        assert isinstance(result, WebsiteScraperOutputSchema)
+        assert isinstance(result, AtomicScraperOutputSchema)
         assert result.results['total_scraped'] == 2
         assert len(result.results['items']) == 2
         assert result.results['items'][0]['data']['title'] == "Item 1"
@@ -742,10 +742,10 @@ class TestWebsiteScraperTool:
     
     def test_extract_items_from_page_single_item(self):
         """Test extracting single item from page."""
-        from website_scraper_tool.models.base_models import ScrapingStrategy
-        from website_scraper_tool.models.extraction_models import ExtractionRule
+        from atomic_scraper_tool.models.base_models import ScrapingStrategy
+        from atomic_scraper_tool.models.extraction_models import ExtractionRule
         
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         html_content = "<html><body><h1>Test Title</h1><p>Test description</p></body></html>"
         source_url = "https://example.com"
@@ -778,7 +778,7 @@ class TestWebsiteScraperTool:
     
     def test_find_next_page_url_next_link(self):
         """Test finding next page URL with next_link strategy."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         html_content = '''
         <html>
@@ -799,7 +799,7 @@ class TestWebsiteScraperTool:
     
     def test_find_next_page_url_no_next_page(self):
         """Test finding next page URL when no next page exists."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         html_content = '''
         <html>
@@ -819,7 +819,7 @@ class TestWebsiteScraperTool:
     
     def test_extract_current_page_number(self):
         """Test extracting current page number from URL."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         # Test various URL patterns
         assert tool._extract_current_page_number("https://example.com?page=5") == 5
@@ -831,7 +831,7 @@ class TestWebsiteScraperTool:
     
     def test_extract_sitemap_urls_xml(self):
         """Test extracting URLs from XML sitemap."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         xml_sitemap = '''<?xml version="1.0" encoding="UTF-8"?>
         <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -853,7 +853,7 @@ class TestWebsiteScraperTool:
     
     def test_extract_sitemap_urls_html(self):
         """Test extracting URLs from HTML sitemap."""
-        tool = WebsiteScraperTool()
+        tool = AtomicScraperTool()
         
         html_sitemap = '''
         <html>

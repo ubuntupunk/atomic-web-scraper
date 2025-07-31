@@ -1,9 +1,9 @@
 """
-Tools module for the website scraper tool.
+Tools module for the Atomic Scraper Tool.
 
-Contains the main website scraper tool and related tool components.
+Contains the next-generation intelligent scraper tool and related components.
 """
 
-from .website_scraper_tool import WebsiteScraperTool
+from .atomic_scraper_tool import AtomicScraperTool
 
-__all__ = ["WebsiteScraperTool"]
+__all__ = ["AtomicScraperTool"]

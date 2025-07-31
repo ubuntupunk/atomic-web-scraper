@@ -7,12 +7,12 @@ from unittest.mock import Mock, patch, MagicMock
 import pytest
 import requests
 
-from website_scraper_tool.compliance.robots_parser import (
+from atomic_scraper_tool.compliance.robots_parser import (
     RobotsParser, 
     RobotsTxtInfo, 
     RobotsTxtRule
 )
-from website_scraper_tool.core.exceptions import ScrapingError
+from atomic_scraper_tool.core.exceptions import ScrapingError
 
 
 class TestRobotsParser:

@@ -1,7 +1,8 @@
 """
-Main application for the Website Scraper Tool.
+Main application for the Atomic Scraper Tool.
 
-Provides an interactive Rich console interface for natural language scraping requests.
+Next-generation intelligent web scraping with AI-powered strategy generation
+and natural language interface for effortless data extraction.
 """
 
 import asyncio
@@ -24,22 +25,22 @@ from rich import box
 from atomic_agents.agents.base_agent import BaseAgentConfig
 from atomic_agents.lib.components.agent_memory import AgentMemory
 
-from .agents.scraper_planning_agent import ScraperPlanningAgent, ScraperAgentInputSchema
-from .tools.website_scraper_tool import WebsiteScraperTool, WebsiteScraperInputSchema
-from .config.scraper_config import WebsiteScraperConfig
+from .agents.scraper_planning_agent import AtomicScraperPlanningAgent, AtomicScraperAgentInputSchema
+from .tools.atomic_scraper_tool import AtomicScraperTool, AtomicScraperInputSchema
+from .config.scraper_config import AtomicScraperConfig
 
 
-class WebsiteScraperApp:
+class AtomicScraperApp:
     """
-    Main application class for the Website Scraper Tool.
+    Main application class for the Atomic Scraper Tool.
     
-    Provides an interactive Rich console interface that allows users to make
-    natural language scraping requests and see formatted results.
+    Next-generation intelligent web scraping application with AI-powered strategy
+    generation and natural language interface for effortless data extraction.
     """
     
     def __init__(self, config_path: Optional[str] = None):
         """
-        Initialize the website scraper application.
+        Initialize the atomic scraper application.
         
         Args:
             config_path: Optional path to configuration file
@@ -70,7 +71,7 @@ class WebsiteScraperApp:
                 "max_pages": 5,
                 "max_results": 50,
                 "min_quality_score": 60.0,
-                "user_agent": "WebsiteScraperTool/1.0",
+                "user_agent": "AtomicScraperTool/1.0",
                 "respect_robots_txt": True,
                 "enable_rate_limiting": True,
                 "max_retries": 3,
@@ -109,8 +110,8 @@ class WebsiteScraperApp:
         """Initialize the planning agent and scraper tool."""
         try:
             # Initialize scraper tool
-            scraper_config = WebsiteScraperConfig(**self.config["scraper"])
-            self.scraper_tool = WebsiteScraperTool(scraper_config)
+            scraper_config = AtomicScraperConfig(**self.config["scraper"])
+            self.scraper_tool = AtomicScraperTool(scraper_config)
             
             # Initialize planning agent (mock for demo - would need actual LLM client)
             # For demo purposes, we'll skip the planning agent initialization
@@ -142,17 +143,19 @@ class WebsiteScraperApp:
     def _show_welcome(self):
         """Display welcome message and application info."""
         welcome_text = """
-# 🕷️ Website Scraper Tool
+# � Ateomic Scraper Tool
 
-Welcome to the intelligent website scraper! This tool uses natural language processing 
-to understand your scraping requests and automatically generates optimal scraping strategies.
+Welcome to the next-generation intelligent web scraper! This AI-powered tool uses advanced 
+natural language processing to understand your scraping requests and automatically generates 
+optimal scraping strategies with dynamic schema recipes.
 
 ## Features:
-- **Natural Language Requests**: Describe what you want to scrape in plain English
-- **Intelligent Strategy Generation**: AI-powered analysis of websites and content
-- **Quality Scoring**: Automatic data quality assessment and filtering
-- **Respectful Crawling**: Built-in rate limiting and robots.txt compliance
-- **Rich Output**: Beautiful formatted results with export options
+- **Natural Language Interface**: Describe what you want to scrape in plain English
+- **AI-Powered Strategy Generation**: Intelligent analysis of websites and content patterns
+- **Dynamic Schema Recipes**: Automatically generated data structures for any website
+- **Advanced Quality Scoring**: Multi-dimensional data quality assessment and filtering
+- **Ethical Scraping**: Built-in compliance with robots.txt and respectful crawling
+- **Rich Interactive Interface**: Beautiful formatted results with export options
 
 Type your scraping requests naturally, like:
 - "Scrape all farmers markets in Cape Town with their locations and hours"
@@ -162,7 +165,7 @@ Type your scraping requests naturally, like:
         
         panel = Panel(
             Markdown(welcome_text),
-            title="🕷️ Website Scraper Tool v1.0",
+            title="�  Atomic Scraper Tool v1.0",
             border_style="blue",
             padding=(1, 2)
         )
@@ -267,7 +270,7 @@ Type your scraping requests naturally, like:
         """Process a scraping request through the planning agent and scraper tool."""
         
         # Create input for planning agent
-        agent_input = ScraperAgentInputSchema(
+        agent_input = AtomicScraperAgentInputSchema(
             request=request,
             target_url=target_url,
             max_results=max_results,
@@ -302,7 +305,7 @@ Type your scraping requests naturally, like:
                 # Step 2: Execute scraping
                 task2 = progress.add_task("🕷️ Executing scraping operation...", total=None)
                 
-                scraper_input = WebsiteScraperInputSchema(
+                scraper_input = AtomicScraperInputSchema(
                     target_url=target_url,
                     strategy=planning_result["strategy"],
                     schema_recipe=planning_result["schema_recipe"],
@@ -324,7 +327,7 @@ Type your scraping requests naturally, like:
                 if self.debug_mode:
                     self.console.print_exception()
     
-    def _mock_planning_agent_response(self, agent_input: ScraperAgentInputSchema) -> Dict[str, Any]:
+    def _mock_planning_agent_response(self, agent_input: AtomicScraperAgentInputSchema) -> Dict[str, Any]:
         """Mock planning agent response for demonstration."""
         # This would normally call self.planning_agent.run(agent_input)
         return {
@@ -958,7 +961,7 @@ Items below the quality threshold are filtered out automatically.
                 "max_pages": 5,
                 "max_results": 50,
                 "min_quality_score": 60.0,
-                "user_agent": "WebsiteScraperTool/1.0",
+                "user_agent": "AtomicScraperTool/1.0",
                 "respect_robots_txt": True,
                 "enable_rate_limiting": True,
                 "max_retries": 3,

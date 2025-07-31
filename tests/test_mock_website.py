@@ -5,7 +5,7 @@ Unit tests for mock website generator functionality.
 import pytest
 from bs4 import BeautifulSoup
 
-from website_scraper_tool.testing.mock_website import (
+from atomic_scraper_tool.testing.mock_website import (
     MockWebsite,
     MockWebsiteGenerator,
     MockWebsiteConfig,

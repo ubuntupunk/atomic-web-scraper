@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, mock_open
 import pytest
 
-from website_scraper_tool.compliance.privacy_compliance import (
+from atomic_scraper_tool.compliance.privacy_compliance import (
     PrivacyComplianceChecker,
     PrivacyComplianceConfig,
     DataCategory,
@@ -305,7 +305,7 @@ class TestPrivacyComplianceChecker:
         assert is_compliant is True
         assert len(issues) == 0
     
-    @patch('website_scraper_tool.compliance.privacy_compliance.logging')
+    @patch('atomic_scraper_tool.compliance.privacy_compliance.logging')
     def test_log_scraping_activity(self, mock_logging):
         """Test scraping activity logging."""
         data = {

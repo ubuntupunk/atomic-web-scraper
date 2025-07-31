@@ -5,7 +5,7 @@ Tests the WebsiteAnalyzer class with mock HTML structures for different website 
 """
 
 import pytest
-from website_scraper_tool.analysis.website_analyzer import (
+from atomic_scraper_tool.analysis.website_analyzer import (
     WebsiteAnalyzer, 
     WebsiteStructureAnalysis,
     ContentPattern,

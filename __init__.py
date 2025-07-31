@@ -1,19 +1,19 @@
 """
-Website Scraper Tool - A conversational AI agent for intelligent web scraping.
+Atomic Scraper Tool - Next-Generation Intelligent Web Scraping
 
-Built on the atomic agents framework, this tool provides a chat interface for users
-to specify scraping criteria and automatically determines the best scraping strategy.
+AI-powered scraping tool built on the atomic agents framework that provides
+natural language interface and dynamic strategy generation for effortless data extraction.
 """
 
-__version__ = "0.1.0"
-__author__ = "Website Scraper Tool"
+__version__ = "1.0.0"
+__author__ = "Atomic Scraper Tool"
 
-from .agents.scraper_planning_agent import ScraperPlanningAgent
-from .tools.website_scraper_tool import WebsiteScraperTool
+from .agents.scraper_planning_agent import AtomicScraperPlanningAgent
+from .tools.atomic_scraper_tool import AtomicScraperTool
 from .config.scraper_config import ScraperConfiguration
 
 __all__ = [
-    "ScraperPlanningAgent",
-    "WebsiteScraperTool", 
+    "AtomicScraperPlanningAgent",
+    "AtomicScraperTool", 
     "ScraperConfiguration"
 ]
