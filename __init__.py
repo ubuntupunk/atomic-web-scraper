@@ -8,12 +8,19 @@ natural language interface and dynamic strategy generation for effortless data e
 __version__ = "1.0.0"
 __author__ = "Atomic Scraper Tool"
 
-from .agents.scraper_planning_agent import AtomicScraperPlanningAgent
+# Import main components
 from .tools.atomic_scraper_tool import AtomicScraperTool
-from .config.scraper_config import ScraperConfiguration
+from .config.scraper_config import AtomicScraperConfig, ScraperConfiguration
+from .models.base_models import ScrapingStrategy, ScrapedItem, ScrapingResult
+from .models.schema_models import SchemaRecipe, FieldDefinition
 
 __all__ = [
-    "AtomicScraperPlanningAgent",
     "AtomicScraperTool", 
-    "ScraperConfiguration"
+    "AtomicScraperConfig",
+    "ScraperConfiguration",
+    "ScrapingStrategy",
+    "ScrapedItem", 
+    "ScrapingResult",
+    "SchemaRecipe",
+    "FieldDefinition"
 ]

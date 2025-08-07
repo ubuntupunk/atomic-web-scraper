@@ -1,0 +1,6 @@
+Metadata-Version: 2.1
+Name: atomic-scraper-tool
+Version: 0.1.0
+Summary: AI-powered web scraping tool with intelligent strategy planning and structured data extraction
+Requires-Python: >=3.11
+License-File: LICENSE
