@@ -237,10 +237,27 @@ Type your scraping requests naturally, like:
             return
         
         # Get target URL
+        self.console.print("[dim]Enter the full URL including https:// (e.g., https://example.com/products)[/dim]")
         target_url = Prompt.ask("[cyan]Target website URL[/cyan]")
         if not target_url.strip():
             self.console.print("[yellow]URL cannot be empty.[/yellow]")
             return
+        
+        # Auto-add https:// if missing
+        if not target_url.startswith(('http://', 'https://')):
+            target_url = 'https://' + target_url
+            self.console.print(f"[dim]Auto-added https:// → {target_url}[/dim]")
+        
+        # Basic URL validation
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(target_url)
+            if not parsed.netloc:
+                self.console.print("[red]Invalid URL format. Please include a domain name.[/red]")
+                return
+            self.console.print(f"[green]✓[/green] [dim]Valid URL format detected[/dim]")
+        except Exception:
+            self.console.print("[yellow]Warning: URL format may be invalid, but proceeding anyway.[/yellow]")
         
         # Get optional parameters
         max_results = Prompt.ask(
@@ -853,6 +870,15 @@ Items below the quality threshold are filtered out automatically.
         )
         
         self.console.print(help_panel)
+        
+        # Additional interactive help options
+        self.console.print("\n[bold cyan]Need more help?[/bold cyan]")
+        self.console.print("• Try the sample requests above with any website")
+        self.console.print("• Start with simple requests and add more details")
+        self.console.print("• Check the session history to see example results")
+        self.console.print("• Enable debug mode for detailed error information")
+        
+        input("\nPress Enter to continue...")
     
     def _handle_exit(self):
         """Handle application exit."""
