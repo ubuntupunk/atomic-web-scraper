@@ -12,7 +12,7 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
-from atomic_agents.lib.base.base_tool import BaseTool, BaseToolConfig
+from atomic_agents.lib.base.base_tool import BaseTool
 from atomic_agents.lib.base.base_io_schema import BaseIOSchema
 from pydantic import Field, field_validator
 
@@ -72,6 +72,8 @@ class AtomicScraperTool(BaseTool):
     data according to dynamic schema recipes.
     """
     
+    name = "Atomic Scraper Tool"
+    description = "Next-generation intelligent web scraping tool with AI-powered strategy generation"
     input_schema = AtomicScraperInputSchema
     output_schema = AtomicScraperOutputSchema
     
@@ -89,13 +91,7 @@ class AtomicScraperTool(BaseTool):
         # Store the scraper config separately from the base tool config
         self.config = config
         
-        # Create base tool config for title and description
-        base_config = BaseToolConfig(
-            title="Atomic Scraper Tool",
-            description="Next-generation intelligent web scraping tool with AI-powered strategy generation"
-        )
-        
-        super().__init__(config=base_config)
+        super().__init__()
         
         # Initialize components
         self.content_extractor = ContentExtractor()
@@ -413,9 +409,9 @@ class AtomicScraperTool(BaseTool):
             Dictionary containing tool information
         """
         return {
-            'name': 'AtomicScraperTool',
+            'name': self.name,
             'version': '1.0.0',
-            'description': 'Next-generation intelligent web scraping tool with AI-powered strategy generation',
+            'description': self.description,
             'config': {
                 'base_url': self.config.base_url,
                 'request_delay': self.config.request_delay,
