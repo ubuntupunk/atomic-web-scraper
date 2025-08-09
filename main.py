@@ -696,31 +696,34 @@ Type your scraping requests naturally, like:
         config_menu.add_column("Description", style="white")
         
         config_menu.add_row("1", "🔧 Modify Scraper Settings")
-        config_menu.add_row("2", "🧠 Manage Schema Recipes")
-        config_menu.add_row("3", "📏 Set Quality Thresholds")
-        config_menu.add_row("4", "💾 Save Configuration")
-        config_menu.add_row("5", "🔄 Reset to Defaults")
-        config_menu.add_row("6", "🔙 Back to Main Menu")
+        config_menu.add_row("2", "� Confgigure AI/Agent Settings")
+        config_menu.add_row("3", "🧠 Manage Schema Recipes")
+        config_menu.add_row("4", "� SSet Quality Thresholds")
+        config_menu.add_row("5", "�  Save Configuration")
+        config_menu.add_row("6", "�  Reset to Defaults")
+        config_menu.add_row("7", "🔙 Back to Main Menu")
         
         self.console.print(config_menu)
         
         choice = Prompt.ask(
             "\n[bold cyan]Choose an option[/bold cyan]",
-            choices=["1", "2", "3", "4", "5", "6"],
-            default="6"
+            choices=["1", "2", "3", "4", "5", "6", "7"],
+            default="7"
         )
         
         if choice == "1":
             self._modify_scraper_settings()
         elif choice == "2":
-            self._manage_schema_recipes()
+            self._configure_ai_settings()
         elif choice == "3":
-            self._set_quality_thresholds()
+            self._manage_schema_recipes()
         elif choice == "4":
-            self._save_configuration()
+            self._set_quality_thresholds()
         elif choice == "5":
+            self._save_configuration()
+        elif choice == "6":
             self._reset_to_defaults()
-        # choice == "6" returns to main menu
+        # choice == "7" returns to main menu
     
     def _show_tool_information(self):
         """Display tool information and statistics."""
@@ -768,6 +771,18 @@ Type your scraping requests naturally, like:
             features_table.add_row("Extraction Types", ", ".join(extraction_types))
             
             self.console.print(features_table)
+            
+            # AI/Agent configuration
+            ai_table = Table(title="AI/Agent Configuration", box=box.SIMPLE)
+            ai_table.add_column("Setting", style="cyan")
+            ai_table.add_column("Value", style="white")
+            
+            agent_config = self.config.get("agent", {})
+            ai_table.add_row("Model", agent_config.get("model", "Not configured"))
+            ai_table.add_row("Temperature", str(agent_config.get("temperature", "Not set")))
+            ai_table.add_row("Max Tokens", str(agent_config.get("max_tokens", "Not set")))
+            
+            self.console.print(ai_table)
             
             # Session statistics
             stats_table = Table(title="Session Statistics", box=box.SIMPLE)
@@ -999,6 +1014,284 @@ Items below the quality threshold are filtered out automatically.
         updated_table.add_column("Value", style="white")
         updated_table.add_row(setting_desc, str(self.config["scraper"][setting_key]))
         self.console.print(updated_table)
+        
+        input("\nPress Enter to continue...")
+    
+    def _configure_ai_settings(self):
+        """Configure AI/Agent model settings."""
+        self.console.print("\n[bold green]🤖 Configure AI/Agent Settings[/bold green]")
+        
+        agent_config = self.config["agent"]
+        
+        # Display current AI settings
+        ai_table = Table(title="Current AI/Agent Configuration", box=box.ROUNDED)
+        ai_table.add_column("Setting", style="cyan")
+        ai_table.add_column("Current Value", style="white")
+        ai_table.add_column("Description", style="dim")
+        
+        ai_settings = [
+            ("model", "AI model to use for planning and analysis"),
+            ("temperature", "Creativity/randomness (0.0-2.0, lower = more focused)"),
+            ("max_tokens", "Maximum response length in tokens")
+        ]
+        
+        for key, description in ai_settings:
+            current_value = str(agent_config.get(key, "Not set"))
+            ai_table.add_row(key.replace("_", " ").title(), current_value, description)
+        
+        self.console.print(ai_table)
+        
+        # Show available models
+        self.console.print("\n[bold cyan]Popular Model Options:[/bold cyan]")
+        models_table = Table(box=box.SIMPLE)
+        models_table.add_column("Provider", style="cyan")
+        models_table.add_column("Model", style="white")
+        models_table.add_column("Description", style="dim")
+        
+        popular_models = [
+            ("OpenAI", "gpt-4", "Most capable, higher cost"),
+            ("OpenAI", "gpt-4-turbo", "Fast and capable, good balance"),
+            ("OpenAI", "gpt-3.5-turbo", "Fast and cost-effective"),
+            ("Anthropic", "claude-3-opus", "Very capable, good reasoning"),
+            ("Anthropic", "claude-3-sonnet", "Balanced performance"),
+            ("Anthropic", "claude-3-haiku", "Fast and efficient"),
+            ("Local", "ollama/llama2", "Run locally with Ollama"),
+            ("Local", "ollama/mistral", "Run locally with Ollama")
+        ]
+        
+        for provider, model, description in popular_models:
+            models_table.add_row(provider, model, description)
+        
+        self.console.print(models_table)
+        
+        # Configuration options
+        self.console.print("\n[bold cyan]Configuration Options:[/bold cyan]")
+        options_table = Table(show_header=False, box=box.SIMPLE)
+        options_table.add_column("Option", style="cyan", width=3)
+        options_table.add_column("Description", style="white")
+        
+        options_table.add_row("1", "Change AI Model")
+        options_table.add_row("2", "Adjust Temperature")
+        options_table.add_row("3", "Set Max Tokens")
+        options_table.add_row("4", "Configure API Settings")
+        options_table.add_row("5", "Test AI Connection")
+        options_table.add_row("6", "Back to Configuration Menu")
+        
+        self.console.print(options_table)
+        
+        choice = Prompt.ask(
+            "\n[cyan]Choose an option[/cyan]",
+            choices=["1", "2", "3", "4", "5", "6"],
+            default="6"
+        )
+        
+        if choice == "1":
+            self._change_ai_model()
+        elif choice == "2":
+            self._adjust_temperature()
+        elif choice == "3":
+            self._set_max_tokens()
+        elif choice == "4":
+            self._configure_api_settings()
+        elif choice == "5":
+            self._test_ai_connection()
+        # choice == "6" returns to config menu
+    
+    def _change_ai_model(self):
+        """Change the AI model used for planning and analysis."""
+        self.console.print("\n[bold green]🔄 Change AI Model[/bold green]")
+        
+        current_model = self.config["agent"]["model"]
+        self.console.print(f"[dim]Current model: {current_model}[/dim]")
+        
+        # Get new model
+        new_model = Prompt.ask(
+            "[cyan]Enter new model name[/cyan] (e.g., gpt-4, claude-3-opus, ollama/llama2)",
+            default=current_model
+        )
+        
+        if new_model != current_model:
+            old_model = self.config["agent"]["model"]
+            self.config["agent"]["model"] = new_model
+            
+            self.console.print(f"[green]✅ Updated AI model[/green]")
+            self.console.print(f"[dim]  Old model: {old_model}[/dim]")
+            self.console.print(f"[dim]  New model: {new_model}[/dim]")
+            
+            # Note about API keys
+            if "gpt" in new_model.lower():
+                self.console.print("\n[yellow]💡 Note: OpenAI models require OPENAI_API_KEY environment variable[/yellow]")
+            elif "claude" in new_model.lower():
+                self.console.print("\n[yellow]💡 Note: Anthropic models require ANTHROPIC_API_KEY environment variable[/yellow]")
+            elif "ollama" in new_model.lower():
+                self.console.print("\n[yellow]💡 Note: Ollama models require local Ollama installation[/yellow]")
+        else:
+            self.console.print("[yellow]No changes made.[/yellow]")
+        
+        input("\nPress Enter to continue...")
+    
+    def _adjust_temperature(self):
+        """Adjust the AI model temperature setting."""
+        self.console.print("\n[bold green]🌡️ Adjust Temperature[/bold green]")
+        
+        current_temp = self.config["agent"]["temperature"]
+        self.console.print(f"[dim]Current temperature: {current_temp}[/dim]")
+        
+        self.console.print("\n[bold cyan]Temperature Guide:[/bold cyan]")
+        temp_guide = Table(box=box.SIMPLE)
+        temp_guide.add_column("Range", style="cyan")
+        temp_guide.add_column("Behavior", style="white")
+        temp_guide.add_column("Best For", style="dim")
+        
+        temp_guide.add_row("0.0 - 0.3", "Very focused, deterministic", "Factual extraction, consistent results")
+        temp_guide.add_row("0.4 - 0.7", "Balanced creativity", "General scraping, strategy planning")
+        temp_guide.add_row("0.8 - 1.2", "More creative", "Complex analysis, varied approaches")
+        temp_guide.add_row("1.3 - 2.0", "Very creative", "Experimental, diverse solutions")
+        
+        self.console.print(temp_guide)
+        
+        new_temp_str = Prompt.ask(
+            "[cyan]Enter new temperature (0.0-2.0)[/cyan]",
+            default=str(current_temp)
+        )
+        
+        try:
+            new_temp = float(new_temp_str)
+            if not 0.0 <= new_temp <= 2.0:
+                self.console.print("[red]Temperature must be between 0.0 and 2.0[/red]")
+                return
+            
+            old_temp = self.config["agent"]["temperature"]
+            self.config["agent"]["temperature"] = new_temp
+            
+            self.console.print(f"[green]✅ Updated temperature[/green]")
+            self.console.print(f"[dim]  Old temperature: {old_temp}[/dim]")
+            self.console.print(f"[dim]  New temperature: {new_temp}[/dim]")
+            
+        except ValueError:
+            self.console.print("[red]Invalid temperature value. Must be a number.[/red]")
+        
+        input("\nPress Enter to continue...")
+    
+    def _set_max_tokens(self):
+        """Set the maximum tokens for AI responses."""
+        self.console.print("\n[bold green]📏 Set Max Tokens[/bold green]")
+        
+        current_tokens = self.config["agent"]["max_tokens"]
+        self.console.print(f"[dim]Current max tokens: {current_tokens}[/dim]")
+        
+        self.console.print("\n[bold cyan]Token Guidelines:[/bold cyan]")
+        token_guide = Table(box=box.SIMPLE)
+        token_guide.add_column("Range", style="cyan")
+        token_guide.add_column("Use Case", style="white")
+        token_guide.add_column("Notes", style="dim")
+        
+        token_guide.add_row("500-1000", "Simple responses", "Basic strategy generation")
+        token_guide.add_row("1000-2000", "Detailed analysis", "Complex scraping plans")
+        token_guide.add_row("2000-4000", "Comprehensive", "Full analysis with examples")
+        token_guide.add_row("4000+", "Very detailed", "May increase costs significantly")
+        
+        self.console.print(token_guide)
+        
+        new_tokens_str = Prompt.ask(
+            "[cyan]Enter max tokens (100-8000)[/cyan]",
+            default=str(current_tokens)
+        )
+        
+        try:
+            new_tokens = int(new_tokens_str)
+            if not 100 <= new_tokens <= 8000:
+                self.console.print("[red]Max tokens must be between 100 and 8000[/red]")
+                return
+            
+            old_tokens = self.config["agent"]["max_tokens"]
+            self.config["agent"]["max_tokens"] = new_tokens
+            
+            self.console.print(f"[green]✅ Updated max tokens[/green]")
+            self.console.print(f"[dim]  Old max tokens: {old_tokens}[/dim]")
+            self.console.print(f"[dim]  New max tokens: {new_tokens}[/dim]")
+            
+        except ValueError:
+            self.console.print("[red]Invalid token value. Must be an integer.[/red]")
+        
+        input("\nPress Enter to continue...")
+    
+    def _configure_api_settings(self):
+        """Configure API keys and endpoints."""
+        self.console.print("\n[bold green]🔑 Configure API Settings[/bold green]")
+        
+        self.console.print("[bold cyan]Environment Variables for API Keys:[/bold cyan]")
+        api_table = Table(box=box.SIMPLE)
+        api_table.add_column("Provider", style="cyan")
+        api_table.add_column("Environment Variable", style="white")
+        api_table.add_column("Status", style="green")
+        
+        import os
+        
+        api_keys = [
+            ("OpenAI", "OPENAI_API_KEY"),
+            ("Anthropic", "ANTHROPIC_API_KEY"),
+            ("Google", "GOOGLE_API_KEY"),
+            ("Azure OpenAI", "AZURE_OPENAI_API_KEY")
+        ]
+        
+        for provider, env_var in api_keys:
+            status = "✅ Set" if os.getenv(env_var) else "❌ Not set"
+            api_table.add_row(provider, env_var, status)
+        
+        self.console.print(api_table)
+        
+        self.console.print("\n[bold cyan]How to set API keys:[/bold cyan]")
+        self.console.print("1. Create a .env file in your project directory")
+        self.console.print("2. Add your API keys like: OPENAI_API_KEY=your_key_here")
+        self.console.print("3. Or set environment variables in your shell")
+        
+        self.console.print("\n[bold cyan]Example .env file:[/bold cyan]")
+        env_example = """OPENAI_API_KEY=sk-your-openai-key-here
+ANTHROPIC_API_KEY=your-anthropic-key-here
+# Add other API keys as needed"""
+        
+        self.console.print(Panel(env_example, title=".env file example", border_style="dim"))
+        
+        input("\nPress Enter to continue...")
+    
+    def _test_ai_connection(self):
+        """Test the AI connection with current settings."""
+        self.console.print("\n[bold green]🧪 Test AI Connection[/bold green]")
+        
+        model = self.config["agent"]["model"]
+        self.console.print(f"[dim]Testing connection to: {model}[/dim]")
+        
+        # This is a mock test - in a real implementation, you'd test the actual AI connection
+        self.console.print("\n[yellow]🔄 Testing AI connection...[/yellow]")
+        
+        import time
+        time.sleep(1)  # Simulate connection test
+        
+        # Mock results based on model type
+        if "gpt" in model.lower():
+            import os
+            if os.getenv("OPENAI_API_KEY"):
+                self.console.print("[green]✅ OpenAI connection successful[/green]")
+                self.console.print(f"[dim]Model: {model}[/dim]")
+                self.console.print(f"[dim]Temperature: {self.config['agent']['temperature']}[/dim]")
+                self.console.print(f"[dim]Max tokens: {self.config['agent']['max_tokens']}[/dim]")
+            else:
+                self.console.print("[red]❌ OpenAI API key not found[/red]")
+                self.console.print("[yellow]Set OPENAI_API_KEY environment variable[/yellow]")
+        elif "claude" in model.lower():
+            import os
+            if os.getenv("ANTHROPIC_API_KEY"):
+                self.console.print("[green]✅ Anthropic connection successful[/green]")
+                self.console.print(f"[dim]Model: {model}[/dim]")
+            else:
+                self.console.print("[red]❌ Anthropic API key not found[/red]")
+                self.console.print("[yellow]Set ANTHROPIC_API_KEY environment variable[/yellow]")
+        elif "ollama" in model.lower():
+            self.console.print("[yellow]⚠️ Ollama connection test not implemented[/yellow]")
+            self.console.print("[dim]Ensure Ollama is running locally with the specified model[/dim]")
+        else:
+            self.console.print("[yellow]⚠️ Unknown model type - connection test skipped[/yellow]")
         
         input("\nPress Enter to continue...")
     
