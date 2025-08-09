@@ -38,7 +38,7 @@ class AtomicScraperApp:
     generation and natural language interface for effortless data extraction.
     """
     
-    def __init__(self, config_path: Optional[str] = None, client: Optional[Any] = None):
+    def __init__(self, config_path: Optional[str] = None, client: Optional[Any] = None, demo_mode: bool = False):
         """
         Initialize the atomic scraper application.
         
@@ -46,6 +46,7 @@ class AtomicScraperApp:
             config_path: Optional path to configuration file
             client: Optional instructor client for model provider injection
                    (used when called by orchestrators like atomic-cli or intelligent-web-scraper)
+            demo_mode: Enable demo mode with mock responses (for testing/demos)
         """
         self.console = Console()
         self.config_path = config_path
@@ -53,6 +54,7 @@ class AtomicScraperApp:
         
         # Store injected client for orchestration scenarios
         self.injected_client = client
+        self.demo_mode = demo_mode
         
         # Initialize components
         self.planning_agent = None
@@ -122,7 +124,11 @@ class AtomicScraperApp:
             self.scraper_tool = AtomicScraperTool(scraper_config)
             
             # Initialize planning agent based on execution context
-            if self.injected_client:
+            if self.demo_mode:
+                # Demo mode: Always use mock responses
+                self.planning_agent = None
+                self.console.print("[yellow]🎭 Demo mode: Planning agent disabled. Using mock responses.[/yellow]")
+            elif self.injected_client:
                 # Orchestration mode: Use injected client
                 self._initialize_planning_agent_with_client(self.injected_client)
                 self.console.print("[green]✓ Planning agent initialized with injected client (orchestration mode)[/green]")
@@ -133,7 +139,7 @@ class AtomicScraperApp:
                     self.console.print("[green]✓ Planning agent initialized in standalone mode[/green]")
                 else:
                     self.planning_agent = None
-                    self.console.print("[yellow]Note: Planning agent disabled - no model provider configured. Using mock responses.[/yellow]")
+                    self._show_model_provider_setup_help()
             
         except Exception as e:
             self.console.print(f"[red]Error initializing components: {e}[/red]")
@@ -570,15 +576,34 @@ Type your scraping requests naturally, like:
         """Check if model provider configuration is available."""
         import os
         
-        # Check for common API keys
-        api_keys = [
-            "OPENAI_API_KEY",
-            "ANTHROPIC_API_KEY", 
-            "AZURE_OPENAI_API_KEY",
-            "GOOGLE_API_KEY"
-        ]
+        # Check for common API keys with basic format validation
+        api_key_patterns = {
+            "OPENAI_API_KEY": lambda key: key.startswith("sk-") and len(key) > 20,
+            "ANTHROPIC_API_KEY": lambda key: key.startswith("sk-ant-") and len(key) > 20,
+            "AZURE_OPENAI_API_KEY": lambda key: len(key) > 10,  # More flexible for Azure
+            "GOOGLE_API_KEY": lambda key: len(key) > 10,
+            "COHERE_API_KEY": lambda key: len(key) > 10,
+            "HUGGINGFACE_API_KEY": lambda key: key.startswith("hf_") and len(key) > 10
+        }
         
-        return any(os.getenv(key) for key in api_keys)
+        # Check if any valid API key is available
+        valid_keys = []
+        for key_name, validator in api_key_patterns.items():
+            key_value = os.getenv(key_name, "").strip()
+            if key_value and validator(key_value):
+                valid_keys.append(key_name)
+        
+        # Special case: Azure needs both key and endpoint
+        if "AZURE_OPENAI_API_KEY" in valid_keys:
+            if not os.getenv("AZURE_OPENAI_ENDPOINT", "").strip():
+                valid_keys.remove("AZURE_OPENAI_API_KEY")
+        
+        if valid_keys and not self.demo_mode:
+            if self.debug_mode:
+                self.console.print(f"[dim]Found valid API keys: {', '.join(valid_keys)}[/dim]")
+            return True
+        
+        return False
     
     def _initialize_planning_agent_with_client(self, client):
         """Initialize planning agent with injected client (orchestration mode)."""
@@ -606,28 +631,90 @@ Type your scraping requests naturally, like:
         """Initialize planning agent in standalone mode."""
         try:
             import instructor
-            import openai
             import os
             
-            # Create client based on available API keys
-            if os.getenv("OPENAI_API_KEY"):
-                client = instructor.from_openai(openai.OpenAI())
-            elif os.getenv("ANTHROPIC_API_KEY"):
-                import anthropic
-                client = instructor.from_anthropic(anthropic.Anthropic())
-            else:
-                # Fallback to OpenAI (will fail if no key, but that's expected)
-                client = instructor.from_openai(openai.OpenAI())
+            # Try different providers in order of preference
+            client = None
+            provider_used = None
             
-            # Initialize with standalone client
-            self._initialize_planning_agent_with_client(client)
+            # Try OpenAI first
+            openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+            if openai_key and openai_key.startswith("sk-") and len(openai_key) > 20:
+                try:
+                    import openai
+                    client = instructor.from_openai(openai.OpenAI())
+                    provider_used = "OpenAI"
+                except Exception as e:
+                    if self.debug_mode:
+                        self.console.print(f"[dim]OpenAI initialization failed: {e}[/dim]")
+            
+            # Try Anthropic if OpenAI failed
+            if not client:
+                anthropic_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+                if anthropic_key and anthropic_key.startswith("sk-ant-") and len(anthropic_key) > 20:
+                    try:
+                        import anthropic
+                        client = instructor.from_anthropic(anthropic.Anthropic())
+                        provider_used = "Anthropic"
+                    except Exception as e:
+                        if self.debug_mode:
+                            self.console.print(f"[dim]Anthropic initialization failed: {e}[/dim]")
+            
+            # Try Azure OpenAI if others failed
+            if not client:
+                azure_key = os.getenv("AZURE_OPENAI_API_KEY", "").strip()
+                azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT", "").strip()
+                if azure_key and azure_endpoint:
+                    try:
+                        from openai import AzureOpenAI
+                        azure_client = AzureOpenAI(
+                            api_key=azure_key,
+                            azure_endpoint=azure_endpoint,
+                            api_version="2024-02-01"
+                        )
+                        client = instructor.from_openai(azure_client)
+                        provider_used = "Azure OpenAI"
+                    except Exception as e:
+                        if self.debug_mode:
+                            self.console.print(f"[dim]Azure OpenAI initialization failed: {e}[/dim]")
+            
+            if client:
+                # Initialize with successfully created client
+                self._initialize_planning_agent_with_client(client)
+                if self.debug_mode:
+                    self.console.print(f"[dim]Using {provider_used} as model provider[/dim]")
+            else:
+                self.planning_agent = None
+                raise Exception("No valid model provider could be initialized")
             
         except ImportError as e:
             self.console.print(f"[yellow]Warning: Model provider libraries not available: {e}[/yellow]")
             self.planning_agent = None
         except Exception as e:
-            self.console.print(f"[yellow]Warning: Could not initialize standalone planning agent: {e}[/yellow]")
+            if self.debug_mode:
+                self.console.print(f"[yellow]Warning: Could not initialize standalone planning agent: {e}[/yellow]")
             self.planning_agent = None
+    
+    def _show_model_provider_setup_help(self):
+        """Show helpful guidance for setting up model providers."""
+        self.console.print("[yellow]⚠️  Planning agent disabled - no model provider configured[/yellow]")
+        self.console.print("\n[bold cyan]To enable AI-powered planning, set up a model provider:[/bold cyan]")
+        
+        # Create a helpful table
+        from rich.table import Table
+        setup_table = Table(box=box.SIMPLE)
+        setup_table.add_column("Provider", style="cyan")
+        setup_table.add_column("Environment Variable", style="white")
+        setup_table.add_column("Example", style="dim")
+        
+        setup_table.add_row("OpenAI", "OPENAI_API_KEY", "export OPENAI_API_KEY=sk-...")
+        setup_table.add_row("Anthropic", "ANTHROPIC_API_KEY", "export ANTHROPIC_API_KEY=sk-ant-...")
+        setup_table.add_row("Azure OpenAI", "AZURE_OPENAI_API_KEY", "export AZURE_OPENAI_API_KEY=...")
+        setup_table.add_row("Google", "GOOGLE_API_KEY", "export GOOGLE_API_KEY=...")
+        
+        self.console.print(setup_table)
+        self.console.print("\n[dim]💡 Tip: You can also use the Configuration menu (option 3) to set up AI settings[/dim]")
+        self.console.print("[dim]🎭 Or use --demo flag to run in demo mode with mock responses[/dim]")
     
     def _show_session_history(self):
         """Display session history."""
@@ -773,11 +860,11 @@ Type your scraping requests naturally, like:
         config_menu.add_column("Description", style="white")
         
         config_menu.add_row("1", "🔧 Modify Scraper Settings")
-        config_menu.add_row("2", "� Confgigure AI/Agent Settings")
+        config_menu.add_row("2", "� Configure AI/Agent Settings")
         config_menu.add_row("3", "🧠 Manage Schema Recipes")
-        config_menu.add_row("4", "� SSet Quality Thresholds")
-        config_menu.add_row("5", "�  Save Configuration")
-        config_menu.add_row("6", "�  Reset to Defaults")
+        config_menu.add_row("4", "� Set Quality Thresholds")
+        config_menu.add_row("5", "� Save Configuration")
+        config_menu.add_row("6", "� Reset to Defaults")
         config_menu.add_row("7", "🔙 Back to Main Menu")
         
         self.console.print(config_menu)
@@ -872,6 +959,16 @@ Type your scraping requests naturally, like:
             stats_table.add_row("Total Requests", str(total_requests))
             stats_table.add_row("Total Items Scraped", str(total_items))
             stats_table.add_row("Debug Mode", "Enabled" if self.debug_mode else "Disabled")
+            stats_table.add_row("Demo Mode", "Enabled" if self.demo_mode else "Disabled")
+            
+            # Planning agent status
+            if self.planning_agent:
+                planning_status = "✅ Active"
+            elif self.demo_mode:
+                planning_status = "🎭 Demo mode (mock responses)"
+            else:
+                planning_status = "❌ Disabled (no model provider)"
+            stats_table.add_row("Planning Agent", planning_status)
             
             self.console.print(stats_table)
             
@@ -1776,6 +1873,7 @@ def main():
     parser = argparse.ArgumentParser(description="Atomic Scraper Tool - Intelligent web scraping with natural language")
     parser.add_argument("--config", "-c", help="Path to configuration file")
     parser.add_argument("--debug", "-d", action="store_true", help="Enable debug mode")
+    parser.add_argument("--demo", action="store_true", help="Run in demo mode with mock responses")
     parser.add_argument("--orchestrated", action="store_true", help="Run in orchestrated mode (for testing)")
     
     args = parser.parse_args()
@@ -1793,7 +1891,11 @@ def main():
             except Exception as e:
                 print(f"⚠️  Could not create test client: {e}")
         
-        app = AtomicScraperApp(config_path=args.config, client=client)
+        app = AtomicScraperApp(
+            config_path=args.config, 
+            client=client, 
+            demo_mode=args.demo
+        )
         if args.debug:
             app.debug_mode = True
         app.run()
@@ -1804,7 +1906,7 @@ def main():
         sys.exit(1)
 
 
-def create_orchestrated_app(config: Optional[Dict[str, Any]] = None, client: Optional[Any] = None) -> AtomicScraperApp:
+def create_orchestrated_app(config: Optional[Dict[str, Any]] = None, client: Optional[Any] = None, demo_mode: bool = False) -> AtomicScraperApp:
     """
     Factory function for creating AtomicScraperApp in orchestration scenarios.
     
@@ -1814,6 +1916,7 @@ def create_orchestrated_app(config: Optional[Dict[str, Any]] = None, client: Opt
     Args:
         config: Optional configuration dictionary
         client: Optional instructor client for model provider injection
+        demo_mode: Enable demo mode with mock responses
         
     Returns:
         Configured AtomicScraperApp instance
@@ -1828,7 +1931,7 @@ def create_orchestrated_app(config: Optional[Dict[str, Any]] = None, client: Opt
             json.dump(config, f, indent=2)
             config_path = f.name
     
-    return AtomicScraperApp(config_path=config_path, client=client)
+    return AtomicScraperApp(config_path=config_path, client=client, demo_mode=demo_mode)
 
 
 def get_orchestration_metadata() -> Dict[str, Any]:

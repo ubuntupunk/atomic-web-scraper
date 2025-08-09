@@ -1,4 +1,4 @@
-# Atomic Scraper Tool - Architecture Documentation
+gi# Atomic Scraper Tool - Architecture Documentation
 
 ## Overview
 
