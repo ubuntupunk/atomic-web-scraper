@@ -60,6 +60,9 @@ class AtomicScraperApp:
         
         # Initialize components
         self._initialize_components()
+        
+        # Add sample session history for demonstration
+        self._add_sample_history()
     
     def _load_config(self) -> Dict[str, Any]:
         """Load application configuration."""
@@ -143,7 +146,7 @@ class AtomicScraperApp:
     def _show_welcome(self):
         """Display welcome message and application info."""
         welcome_text = """
-# � Ateomic Scraper Tool
+# � Atomic Scraper Tool
 
 Welcome to the next-generation intelligent web scraper! This AI-powered tool uses advanced 
 natural language processing to understand your scraping requests and automatically generates 
@@ -498,29 +501,161 @@ Type your scraping requests naturally, like:
         
         self.session_history.append(history_entry)
     
+    def _add_sample_history(self):
+        """Add sample session history for demonstration purposes."""
+        from datetime import datetime, timedelta
+        
+        # Add some sample history entries
+        sample_entries = [
+            {
+                "timestamp": (datetime.now() - timedelta(minutes=30)).isoformat(),
+                "request": "Scrape product listings with prices and ratings",
+                "url": "https://example-store.com/products",
+                "planning_result": {"strategy": "list_scraping"},
+                "scraping_summary": "Successfully scraped 25 product listings",
+                "items_scraped": 25
+            },
+            {
+                "timestamp": (datetime.now() - timedelta(minutes=15)).isoformat(),
+                "request": "Extract news articles from homepage",
+                "url": "https://news-site.com",
+                "planning_result": {"strategy": "article_extraction"},
+                "scraping_summary": "Extracted 12 news articles with metadata",
+                "items_scraped": 12
+            },
+            {
+                "timestamp": (datetime.now() - timedelta(minutes=5)).isoformat(),
+                "request": "Get restaurant information with ratings",
+                "url": "https://restaurant-directory.com/search",
+                "planning_result": {"strategy": "directory_scraping"},
+                "scraping_summary": "Found 8 restaurants with complete data",
+                "items_scraped": 8
+            }
+        ]
+        
+        self.session_history.extend(sample_entries)
+    
     def _show_session_history(self):
         """Display session history."""
         self.console.print("\n[bold green]📋 Session History[/bold green]")
         
         if not self.session_history:
             self.console.print("[yellow]No scraping requests in this session.[/yellow]")
+            input("\nPress Enter to continue...")
             return
         
         history_table = Table(box=box.ROUNDED)
+        history_table.add_column("#", style="dim", width=3)
         history_table.add_column("Time", style="cyan", width=20)
         history_table.add_column("Request", style="white", width=40)
         history_table.add_column("URL", style="blue", width=30)
         history_table.add_column("Items", style="green", width=8)
         
-        for entry in self.session_history:
+        for i, entry in enumerate(self.session_history, 1):
             timestamp = entry["timestamp"][:19].replace("T", " ")
             request = entry["request"][:37] + "..." if len(entry["request"]) > 40 else entry["request"]
             url = entry["url"][:27] + "..." if len(entry["url"]) > 30 else entry["url"]
             items = str(entry["items_scraped"])
             
-            history_table.add_row(timestamp, request, url, items)
+            history_table.add_row(str(i), timestamp, request, url, items)
         
         self.console.print(history_table)
+        
+        # Show summary
+        total_items = sum(entry["items_scraped"] for entry in self.session_history)
+        self.console.print(f"\n[bold]Summary:[/bold] {len(self.session_history)} scraping operations, {total_items} total items scraped")
+        
+        # Ask if user wants to see details or export
+        self.console.print("\n[bold cyan]Options:[/bold cyan]")
+        self.console.print("1. View detailed entry")
+        self.console.print("2. Export session history")
+        self.console.print("3. Clear session history")
+        self.console.print("4. Back to main menu")
+        
+        choice = Prompt.ask(
+            "\n[cyan]Choose an option[/cyan]",
+            choices=["1", "2", "3", "4"],
+            default="4"
+        )
+        
+        if choice == "1":
+            self._view_history_details()
+        elif choice == "2":
+            self._export_session_history()
+        elif choice == "3":
+            self._clear_session_history()
+        # choice == "4" returns to main menu
+    
+    def _view_history_details(self):
+        """View detailed information about a specific history entry."""
+        if not self.session_history:
+            return
+        
+        entry_choices = [str(i) for i in range(1, len(self.session_history) + 1)] + ["cancel"]
+        entry_num = Prompt.ask(
+            f"[cyan]Which entry would you like to view? (1-{len(self.session_history)})[/cyan]",
+            choices=entry_choices,
+            default="cancel"
+        )
+        
+        if entry_num == "cancel":
+            return
+        
+        entry = self.session_history[int(entry_num) - 1]
+        
+        # Display detailed entry information
+        detail_table = Table(title=f"Entry {entry_num} Details", box=box.ROUNDED)
+        detail_table.add_column("Field", style="cyan", width=20)
+        detail_table.add_column("Value", style="white")
+        
+        detail_table.add_row("Timestamp", entry["timestamp"])
+        detail_table.add_row("Request", entry["request"])
+        detail_table.add_row("URL", entry["url"])
+        detail_table.add_row("Items Scraped", str(entry["items_scraped"]))
+        detail_table.add_row("Summary", entry["scraping_summary"])
+        
+        self.console.print(detail_table)
+        input("\nPress Enter to continue...")
+    
+    def _export_session_history(self):
+        """Export session history to a file."""
+        if not self.session_history:
+            self.console.print("[yellow]No session history to export.[/yellow]")
+            return
+        
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"session_history_{timestamp}.json"
+        
+        try:
+            import json
+            with open(filename, 'w') as f:
+                json.dump(self.session_history, f, indent=2, default=str)
+            
+            self.console.print(f"[green]✅ Session history exported to {filename}[/green]")
+        except Exception as e:
+            self.console.print(f"[red]❌ Export failed: {e}[/red]")
+        
+        input("\nPress Enter to continue...")
+    
+    def _clear_session_history(self):
+        """Clear the current session history."""
+        if not self.session_history:
+            self.console.print("[yellow]Session history is already empty.[/yellow]")
+            return
+        
+        confirm = Confirm.ask(
+            f"[red]Are you sure you want to clear {len(self.session_history)} history entries?[/red]",
+            default=False
+        )
+        
+        if confirm:
+            self.session_history.clear()
+            self.console.print("[green]✅ Session history cleared.[/green]")
+        else:
+            self.console.print("[yellow]Operation cancelled.[/yellow]")
+        
+        input("\nPress Enter to continue...")
     
     def _show_configuration_settings(self):
         """Display and allow modification of configuration settings."""
@@ -574,45 +709,88 @@ Type your scraping requests naturally, like:
         """Display tool information and statistics."""
         self.console.print("\n[bold green]📊 Tool Information[/bold green]")
         
-        # Get tool info
-        tool_info = self.scraper_tool.get_tool_info()
+        try:
+            # Get tool info
+            if self.scraper_tool is None:
+                self.console.print("[red]❌ Scraper tool not initialized[/red]")
+                input("\nPress Enter to continue...")
+                return
+            
+            tool_info = self.scraper_tool.get_tool_info()
+            
+            info_table = Table(title="Tool Information", box=box.ROUNDED)
+            info_table.add_column("Property", style="cyan")
+            info_table.add_column("Value", style="white")
+            
+            info_table.add_row("Name", tool_info.get("name", "Atomic Scraper Tool"))
+            info_table.add_row("Version", tool_info.get("version", "1.0.0"))
+            info_table.add_row("Description", tool_info.get("description", "AI-powered web scraping tool"))
+            
+            self.console.print(info_table)
+            
+            # Configuration details
+            config_table = Table(title="Current Configuration", box=box.SIMPLE)
+            config_table.add_column("Setting", style="cyan")
+            config_table.add_column("Value", style="white")
+            
+            config_data = tool_info.get("config", self.config.get("scraper", {}))
+            for key, value in config_data.items():
+                config_table.add_row(key.replace("_", " ").title(), str(value))
+            
+            self.console.print(config_table)
+            
+            # Supported features
+            features_table = Table(title="Supported Features", box=box.SIMPLE)
+            features_table.add_column("Feature", style="cyan")
+            features_table.add_column("Options", style="white")
+            
+            strategies = tool_info.get("supported_strategies", ["list", "detail", "search", "sitemap"])
+            extraction_types = tool_info.get("supported_extraction_types", ["text", "links", "images", "tables"])
+            
+            features_table.add_row("Strategies", ", ".join(strategies))
+            features_table.add_row("Extraction Types", ", ".join(extraction_types))
+            
+            self.console.print(features_table)
+            
+            # Session statistics
+            stats_table = Table(title="Session Statistics", box=box.SIMPLE)
+            stats_table.add_column("Metric", style="cyan")
+            stats_table.add_column("Value", style="white")
+            
+            total_requests = len(self.session_history)
+            total_items = sum(entry["items_scraped"] for entry in self.session_history)
+            
+            stats_table.add_row("Total Requests", str(total_requests))
+            stats_table.add_row("Total Items Scraped", str(total_items))
+            stats_table.add_row("Debug Mode", "Enabled" if self.debug_mode else "Disabled")
+            
+            self.console.print(stats_table)
+            
+        except Exception as e:
+            self.console.print(f"[red]❌ Error retrieving tool information: {e}[/red]")
+            if self.debug_mode:
+                self.console.print_exception()
         
-        info_table = Table(title="Tool Information", box=box.ROUNDED)
-        info_table.add_column("Property", style="cyan")
-        info_table.add_column("Value", style="white")
-        
-        info_table.add_row("Name", tool_info["name"])
-        info_table.add_row("Version", tool_info["version"])
-        info_table.add_row("Description", tool_info["description"])
-        
-        self.console.print(info_table)
-        
-        # Configuration details
-        config_table = Table(title="Current Configuration", box=box.SIMPLE)
-        config_table.add_column("Setting", style="cyan")
-        config_table.add_column("Value", style="white")
-        
-        for key, value in tool_info["config"].items():
-            config_table.add_row(key.replace("_", " ").title(), str(value))
-        
-        self.console.print(config_table)
-        
-        # Supported features
-        features_table = Table(title="Supported Features", box=box.SIMPLE)
-        features_table.add_column("Feature", style="cyan")
-        features_table.add_column("Options", style="white")
-        
-        features_table.add_row("Strategies", ", ".join(tool_info["supported_strategies"]))
-        features_table.add_row("Extraction Types", ", ".join(tool_info["supported_extraction_types"]))
-        
-        self.console.print(features_table)
+        input("\nPress Enter to continue...")
     
     def _toggle_debug_mode(self):
         """Toggle debug mode on/off."""
         self.debug_mode = not self.debug_mode
         status = "enabled" if self.debug_mode else "disabled"
         color = "green" if self.debug_mode else "red"
+        
         self.console.print(f"\n[{color}]🐛 Debug mode {status}[/{color}]")
+        
+        if self.debug_mode:
+            self.console.print("\n[dim]Debug mode features:[/dim]")
+            self.console.print("• Detailed error tracebacks")
+            self.console.print("• Verbose logging output")
+            self.console.print("• Additional diagnostic information")
+            self.console.print("• Request/response details")
+        else:
+            self.console.print("\n[dim]Debug mode disabled - errors will show simplified messages[/dim]")
+        
+        input("\nPress Enter to continue...")
     
     def _show_help_and_examples(self):
         """Display help information and examples."""
@@ -678,7 +856,7 @@ Items below the quality threshold are filtered out automatically.
     
     def _handle_exit(self):
         """Handle application exit."""
-        self.console.print("\n[bold blue]👋 Thank you for using Website Scraper Tool![/bold blue]")
+        self.console.print("\n[bold blue]👋 Thank you for using Atomic Scraper Tool![/bold blue]")
         
         if self.session_history:
             save_history = Confirm.ask("Save session history?", default=True)
@@ -1168,14 +1346,14 @@ def main():
     """Main entry point for the application."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Website Scraper Tool - Intelligent web scraping with natural language")
+    parser = argparse.ArgumentParser(description="Atomic Scraper Tool - Intelligent web scraping with natural language")
     parser.add_argument("--config", "-c", help="Path to configuration file")
     parser.add_argument("--debug", "-d", action="store_true", help="Enable debug mode")
     
     args = parser.parse_args()
     
     try:
-        app = WebsiteScraperApp(config_path=args.config)
+        app = AtomicScraperApp(config_path=args.config)
         if args.debug:
             app.debug_mode = True
         app.run()
@@ -1187,4 +1365,5 @@ def main():
 
 
 if __name__ == "__main__":
+    main()
     main()

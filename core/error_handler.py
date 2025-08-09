@@ -1,5 +1,5 @@
 """
-Error handling and retry mechanisms for the website scraper tool.
+Error handling and retry mechanisms for the atomic scraper tool.
 
 Provides centralized error handling with categorized error types,
 retry logic for recoverable errors, and graceful degradation strategies.

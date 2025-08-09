@@ -1,3 +1,3 @@
 """
-Test package for website scraper tool.
+Test package for atomic scraper tool.
 """

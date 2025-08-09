@@ -1,5 +1,5 @@
 """
-Website structure analyzer for the website scraper tool.
+Website structure analyzer for the atomic scraper tool.
 
 Analyzes HTML structure and content patterns to identify common content types,
 pagination, navigation, and content organization.

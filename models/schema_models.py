@@ -1,5 +1,5 @@
 """
-Schema-related data models for the website scraper tool.
+Schema-related data models for the atomic scraper tool.
 
 Contains models for dynamic schema generation and field definitions.
 """

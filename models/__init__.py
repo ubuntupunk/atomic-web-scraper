@@ -1,5 +1,5 @@
 """
-Data models module for the website scraper tool.
+Data models module for the atomic scraper tool.
 
 Contains Pydantic models for data validation and serialization.
 """

@@ -1,5 +1,5 @@
 """
-Dynamic schema recipe generator for the website scraper tool.
+Dynamic schema recipe generator for the atomic scraper tool.
 
 Creates JSON schemas from website analysis and identifies data patterns and types.
 """

@@ -1,5 +1,5 @@
 """
-Scraping strategy generator for the website scraper tool.
+Scraping strategy generator for the atomic scraper tool.
 
 Creates ScrapingStrategy objects based on website analysis and user criteria.
 """

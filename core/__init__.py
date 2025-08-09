@@ -1,5 +1,5 @@
 """
-Core module for the website scraper tool.
+Core module for the atomic scraper tool.
 
 Contains base interfaces, abstract classes, and core functionality.
 """

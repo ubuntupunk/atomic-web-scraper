@@ -1,5 +1,5 @@
 """
-Base interfaces and abstract classes for the website scraper tool.
+Base interfaces and abstract classes for the atomic scraper tool.
 
 These interfaces establish system boundaries and define contracts for core components.
 """

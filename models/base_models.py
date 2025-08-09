@@ -1,5 +1,5 @@
 """
-Base data models for the website scraper tool.
+Base data models for the atomic scraper tool.
 
 Contains core Pydantic models for scraping operations and results.
 """

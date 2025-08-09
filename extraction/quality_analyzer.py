@@ -1,5 +1,5 @@
 """
-Data quality scoring system for the website scraper tool.
+Data quality scoring system for the atomic scraper tool.
 
 Provides comprehensive quality analysis including completeness, accuracy,
 consistency scoring with configurable thresholds and filtering logic.

@@ -1,5 +1,5 @@
 """
-Extraction-related data models for the website scraper tool.
+Extraction-related data models for the atomic scraper tool.
 
 Contains models for content extraction and processing.
 """

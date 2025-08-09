@@ -1,5 +1,5 @@
 """
-Testing utilities for the website scraper tool.
+Testing utilities for the atomic scraper tool.
 
 This module provides mock websites, test data generators, and testing utilities
 for comprehensive testing of scraping functionality.

@@ -1,5 +1,5 @@
 """
-Custom exception classes for the website scraper tool.
+Custom exception classes for the atomic scraper tool.
 
 Provides specific error types for different failure scenarios.
 """
