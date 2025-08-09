@@ -973,14 +973,34 @@ Items below the quality threshold are filtered out automatically.
             new_value = Prompt.ask(f"[cyan]New value for {setting_key}[/cyan]", default=str(current_value))
         
         # Update the configuration
+        old_value = self.config["scraper"][setting_key]
         self.config["scraper"][setting_key] = new_value
         
         # Update the scraper tool configuration
         try:
-            self.scraper_tool.update_config(**{setting_key: new_value})
-            self.console.print(f"[green]✅ Updated {setting_key} to {new_value}[/green]")
+            if self.scraper_tool:
+                self.scraper_tool.update_config(**{setting_key: new_value})
+            
+            self.console.print(f"[green]✅ Updated {setting_key}[/green]")
+            self.console.print(f"[dim]  Old value: {old_value}[/dim]")
+            self.console.print(f"[dim]  New value: {new_value}[/dim]")
+            
         except Exception as e:
             self.console.print(f"[red]❌ Failed to update setting: {e}[/red]")
+            if self.debug_mode:
+                self.console.print_exception()
+            # Revert the config change
+            self.config["scraper"][setting_key] = old_value
+        
+        # Show updated configuration summary
+        self.console.print(f"\n[bold]Current {setting_key} configuration:[/bold]")
+        updated_table = Table(box=box.SIMPLE)
+        updated_table.add_column("Setting", style="cyan")
+        updated_table.add_column("Value", style="white")
+        updated_table.add_row(setting_desc, str(self.config["scraper"][setting_key]))
+        self.console.print(updated_table)
+        
+        input("\nPress Enter to continue...")
     
     def _manage_schema_recipes(self):
         """Manage schema recipes for different scraping scenarios."""
@@ -1107,10 +1127,15 @@ Items below the quality threshold are filtered out automatically.
         
         # Update scraper tool quality thresholds
         try:
-            self.scraper_tool.update_config(min_quality_score=thresholds["minimum_overall"])
+            if self.scraper_tool:
+                self.scraper_tool.update_config(min_quality_score=thresholds["minimum_overall"])
             self.console.print("[green]✅ Quality thresholds updated successfully[/green]")
         except Exception as e:
             self.console.print(f"[red]❌ Failed to update quality thresholds: {e}[/red]")
+            if self.debug_mode:
+                self.console.print_exception()
+        
+        input("\nPress Enter to continue...")
     
     def _save_configuration(self):
         """Save current configuration to file."""
@@ -1130,6 +1155,8 @@ Items below the quality threshold are filtered out automatically.
             self.console.print(f"[green]✅ Configuration saved to {filename}[/green]")
         except Exception as e:
             self.console.print(f"[red]❌ Failed to save configuration: {e}[/red]")
+        
+        input("\nPress Enter to continue...")
     
     def _reset_to_defaults(self):
         """Reset configuration to default values."""
@@ -1145,15 +1172,19 @@ Items below the quality threshold are filtered out automatically.
             return
         
         # Reset to default configuration
-        self.config = self._load_default_config()
+        self.config = self._load_config()  # This loads defaults if no config file exists
         
         # Reinitialize components with new config
         try:
-            scraper_config = WebsiteScraperConfig(**self.config["scraper"])
-            self.scraper_tool = WebsiteScraperTool(scraper_config)
+            scraper_config = AtomicScraperConfig(**self.config["scraper"])
+            self.scraper_tool = AtomicScraperTool(scraper_config)
             self.console.print("[green]✅ Configuration reset to defaults[/green]")
         except Exception as e:
             self.console.print(f"[red]❌ Failed to reset configuration: {e}[/red]")
+            if self.debug_mode:
+                self.console.print_exception()
+        
+        input("\nPress Enter to continue...")
     
     def _load_default_config(self) -> Dict[str, Any]:
         """Load default configuration without user overrides."""
