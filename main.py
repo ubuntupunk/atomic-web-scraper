@@ -38,16 +38,21 @@ class AtomicScraperApp:
     generation and natural language interface for effortless data extraction.
     """
     
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: Optional[str] = None, client: Optional[Any] = None):
         """
         Initialize the atomic scraper application.
         
         Args:
             config_path: Optional path to configuration file
+            client: Optional instructor client for model provider injection
+                   (used when called by orchestrators like atomic-cli or intelligent-web-scraper)
         """
         self.console = Console()
         self.config_path = config_path
         self.config = self._load_config()
+        
+        # Store injected client for orchestration scenarios
+        self.injected_client = client
         
         # Initialize components
         self.planning_agent = None
@@ -116,15 +121,24 @@ class AtomicScraperApp:
             scraper_config = AtomicScraperConfig(**self.config["scraper"])
             self.scraper_tool = AtomicScraperTool(scraper_config)
             
-            # Initialize planning agent (mock for demo - would need actual LLM client)
-            # For demo purposes, we'll skip the planning agent initialization
-            # In a real implementation, this would use a proper LLM client
-            self.planning_agent = None
-            
-            self.console.print("[yellow]Note: Planning agent disabled for demo. Using mock responses.[/yellow]")
+            # Initialize planning agent based on execution context
+            if self.injected_client:
+                # Orchestration mode: Use injected client
+                self._initialize_planning_agent_with_client(self.injected_client)
+                self.console.print("[green]✓ Planning agent initialized with injected client (orchestration mode)[/green]")
+            else:
+                # Standalone mode: Check for API key and initialize if available
+                if self._has_model_provider_config():
+                    self._initialize_planning_agent_standalone()
+                    self.console.print("[green]✓ Planning agent initialized in standalone mode[/green]")
+                else:
+                    self.planning_agent = None
+                    self.console.print("[yellow]Note: Planning agent disabled - no model provider configured. Using mock responses.[/yellow]")
             
         except Exception as e:
             self.console.print(f"[red]Error initializing components: {e}[/red]")
+            if self.debug_mode:
+                self.console.print_exception()
             sys.exit(1)
     
     def run(self):
@@ -551,6 +565,69 @@ Type your scraping requests naturally, like:
         ]
         
         self.session_history.extend(sample_entries)
+    
+    def _has_model_provider_config(self) -> bool:
+        """Check if model provider configuration is available."""
+        import os
+        
+        # Check for common API keys
+        api_keys = [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY", 
+            "AZURE_OPENAI_API_KEY",
+            "GOOGLE_API_KEY"
+        ]
+        
+        return any(os.getenv(key) for key in api_keys)
+    
+    def _initialize_planning_agent_with_client(self, client):
+        """Initialize planning agent with injected client (orchestration mode)."""
+        try:
+            # Import planning agent components
+            from .agents.scraper_planning_agent import AtomicScraperPlanningAgent
+            from atomic_agents.agents.base_agent import BaseAgentConfig
+            
+            # Create agent config with injected client
+            agent_config = BaseAgentConfig(
+                client=client,
+                model=self.config.get("agent", {}).get("model", "gpt-3.5-turbo")
+            )
+            
+            self.planning_agent = AtomicScraperPlanningAgent(agent_config)
+            
+        except ImportError as e:
+            self.console.print(f"[yellow]Warning: Could not import planning agent: {e}[/yellow]")
+            self.planning_agent = None
+        except Exception as e:
+            self.console.print(f"[red]Error initializing planning agent with injected client: {e}[/red]")
+            self.planning_agent = None
+    
+    def _initialize_planning_agent_standalone(self):
+        """Initialize planning agent in standalone mode."""
+        try:
+            import instructor
+            import openai
+            import os
+            
+            # Create client based on available API keys
+            if os.getenv("OPENAI_API_KEY"):
+                client = instructor.from_openai(openai.OpenAI())
+            elif os.getenv("ANTHROPIC_API_KEY"):
+                import anthropic
+                client = instructor.from_anthropic(anthropic.Anthropic())
+            else:
+                # Fallback to OpenAI (will fail if no key, but that's expected)
+                client = instructor.from_openai(openai.OpenAI())
+            
+            # Initialize with standalone client
+            self._initialize_planning_agent_with_client(client)
+            
+        except ImportError as e:
+            self.console.print(f"[yellow]Warning: Model provider libraries not available: {e}[/yellow]")
+            self.planning_agent = None
+        except Exception as e:
+            self.console.print(f"[yellow]Warning: Could not initialize standalone planning agent: {e}[/yellow]")
+            self.planning_agent = None
     
     def _show_session_history(self):
         """Display session history."""
@@ -1699,11 +1776,24 @@ def main():
     parser = argparse.ArgumentParser(description="Atomic Scraper Tool - Intelligent web scraping with natural language")
     parser.add_argument("--config", "-c", help="Path to configuration file")
     parser.add_argument("--debug", "-d", action="store_true", help="Enable debug mode")
+    parser.add_argument("--orchestrated", action="store_true", help="Run in orchestrated mode (for testing)")
     
     args = parser.parse_args()
     
     try:
-        app = AtomicScraperApp(config_path=args.config)
+        # Create app with optional client injection for testing
+        client = None
+        if args.orchestrated:
+            # For testing orchestration mode
+            try:
+                import instructor
+                import openai
+                client = instructor.from_openai(openai.OpenAI())
+                print("🔗 Running in orchestrated mode with injected client")
+            except Exception as e:
+                print(f"⚠️  Could not create test client: {e}")
+        
+        app = AtomicScraperApp(config_path=args.config, client=client)
         if args.debug:
             app.debug_mode = True
         app.run()
@@ -1712,6 +1802,62 @@ def main():
     except Exception as e:
         print(f"❌ Application error: {e}")
         sys.exit(1)
+
+
+def create_orchestrated_app(config: Optional[Dict[str, Any]] = None, client: Optional[Any] = None) -> AtomicScraperApp:
+    """
+    Factory function for creating AtomicScraperApp in orchestration scenarios.
+    
+    This function is used by orchestrators like atomic-cli or intelligent-web-scraper
+    to create properly configured instances with injected model providers.
+    
+    Args:
+        config: Optional configuration dictionary
+        client: Optional instructor client for model provider injection
+        
+    Returns:
+        Configured AtomicScraperApp instance
+    """
+    # Create temporary config file if config provided
+    config_path = None
+    if config:
+        import tempfile
+        import json
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(config, f, indent=2)
+            config_path = f.name
+    
+    return AtomicScraperApp(config_path=config_path, client=client)
+
+
+def get_orchestration_metadata() -> Dict[str, Any]:
+    """
+    Get metadata for atomic-agents ecosystem integration.
+    
+    Returns:
+        Dictionary containing tool metadata for orchestration
+    """
+    return {
+        "name": "atomic-scraper-tool",
+        "description": "AI-powered web scraping tool with intelligent strategy planning",
+        "version": "0.1.0",
+        "author": "Atomic Agents Team",
+        "category": "web-scraping",
+        "tags": ["web-scraping", "ai-planning", "data-extraction", "atomic-agents"],
+        "app_class": "atomic_scraper_tool.main.AtomicScraperApp",
+        "factory_function": "atomic_scraper_tool.main.create_orchestrated_app",
+        "supports_client_injection": True,
+        "execution_modes": ["standalone", "orchestrated"],
+        "cli_commands": ["atomic-scraper"],
+        "requirements": [
+            "atomic-agents>=1.1.11",
+            "requests>=2.32.3",
+            "beautifulsoup4>=4.12.3",
+            "rich>=13.7.1",
+            "instructor>=1.9.0"
+        ]
+    }
 
 
 if __name__ == "__main__":

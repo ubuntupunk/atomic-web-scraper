@@ -581,6 +581,80 @@ For smooth development, follow this workflow:
    - [ ] Class names match between definition and usage
    - [ ] Running from correct directory with proper PYTHONPATH
 
+## Orchestration Integration
+
+The Atomic Scraper Tool supports integration with orchestrators like `atomic-cli` and `intelligent-web-scraper` through model provider injection.
+
+### Standalone Mode
+
+When run independently, the tool uses its own model provider configuration:
+
+```bash
+# Uses environment variables like OPENAI_API_KEY
+atomic-scraper
+
+# Or with explicit config
+atomic-scraper --config my_config.json
+```
+
+### Orchestrated Mode
+
+When called by orchestrators, the model provider is injected:
+
+```python
+import instructor
+import openai
+from atomic_scraper_tool.main import create_orchestrated_app
+
+# Create shared client
+client = instructor.from_openai(openai.OpenAI())
+
+# Create orchestrated app with injected client
+app = create_orchestrated_app(
+    config={
+        "scraper": {
+            "max_results": 50,
+            "quality_threshold": 70.0
+        }
+    },
+    client=client  # Injected model provider
+)
+
+# Use the app programmatically
+# app.run() or call specific methods
+```
+
+### Integration Metadata
+
+For ecosystem discovery and integration:
+
+```python
+from atomic_scraper_tool.main import get_orchestration_metadata
+
+metadata = get_orchestration_metadata()
+print(f"Tool: {metadata['name']}")
+print(f"Supports client injection: {metadata['supports_client_injection']}")
+print(f"Factory function: {metadata['factory_function']}")
+```
+
+### Execution Modes
+
+1. **Standalone Mode**: 
+   - Uses own API keys from environment
+   - Full interactive CLI interface
+   - Independent operation
+
+2. **Orchestrated Mode**:
+   - Receives model provider from orchestrator
+   - Shared client configuration
+   - Coordinated with other agents
+
+This pattern ensures:
+- **Consistency**: Same model provider across all agents
+- **Efficiency**: Shared client connections and configuration
+- **Flexibility**: Works both standalone and orchestrated
+- **Scalability**: Proper resource management in multi-agent scenarios
+
 ## Support
 
 For questions, issues, or contributions, please visit our GitHub repository or contact the development team.
