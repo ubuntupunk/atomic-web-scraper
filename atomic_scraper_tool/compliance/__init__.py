@@ -5,9 +5,9 @@ This module provides tools for respecting website policies, rate limiting,
 and maintaining compliance with web scraping best practices.
 """
 
-from atomic_scraper_tool.robots_parser import RobotsParser
-from atomic_scraper_tool.rate_limiter import RateLimiter, RateLimitConfig, RespectfulCrawler
-from atomic_scraper_tool.privacy_compliance import (
+from atomic_scraper_tool.compliance.robots_parser import RobotsParser
+from atomic_scraper_tool.compliance.rate_limiter import RateLimiter, RateLimitConfig, RespectfulCrawler
+from atomic_scraper_tool.compliance.privacy_compliance import (
     PrivacyComplianceChecker,
     PrivacyComplianceConfig,
     DataCategory,
