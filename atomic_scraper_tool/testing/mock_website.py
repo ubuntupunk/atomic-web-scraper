@@ -107,6 +107,96 @@ class MockWebsite:
             include_navigation=True
         )
     
+    def _generate_listing_page(self, page_num: int) -> str:
+        """Generate a listing page with multiple items."""
+        generator = self.generators[self.config.website_type]
+        
+        # Generate items for this page
+        items_html = []
+        start_item = (page_num - 1) * self.config.items_per_page + 1
+        end_item = start_item + self.config.items_per_page
+        
+        for item_id in range(start_item, end_item):
+            if self.config.website_type == WebsiteType.ECOMMERCE:
+                items_html.append(self._generate_product_card(item_id))
+            elif self.config.website_type == WebsiteType.NEWS:
+                items_html.append(self._generate_article_card(item_id))
+            elif self.config.website_type == WebsiteType.BLOG:
+                items_html.append(self._generate_blog_card(item_id))
+            else:
+                items_html.append(self._generate_generic_card(item_id))
+        
+        # Generate pagination
+        pagination_html = self._generate_pagination(page_num) if self.config.include_pagination else ""
+        
+        content = f"""
+        <div class="listing-page">
+            <h1>Page {page_num}</h1>
+            <div class="items-grid">
+                {''.join(items_html)}
+            </div>
+            {pagination_html}
+        </div>
+        """
+        
+        return self._wrap_in_html_template(
+            title=f"Page {page_num} - {self.config.website_type.title()} Site",
+            content=content,
+            include_navigation=True
+        )
+    
+    def _generate_item_page(self, item_id: str) -> str:
+        """Generate a detailed item page."""
+        if self.config.website_type == WebsiteType.ECOMMERCE:
+            content = self._generate_product_detail(item_id)
+        elif self.config.website_type == WebsiteType.NEWS:
+            content = self._generate_article_detail(item_id)
+        elif self.config.website_type == WebsiteType.BLOG:
+            content = self._generate_blog_detail(item_id)
+        else:
+            content = self._generate_generic_detail(item_id)
+        
+        return self._wrap_in_html_template(
+            title=f"Item {item_id} - {self.config.website_type.title()} Site",
+            content=content,
+            include_navigation=True
+        )
+    
+    def _generate_category_page(self, category: str) -> str:
+        """Generate a category page."""
+        content = f"""
+        <div class="category-page">
+            <h1>Category: {category.title()}</h1>
+            <div class="category-items">
+                <div class="item-card">
+                    <h3><a href="/item/1">Sample Item in {category}</a></h3>
+                    <p>Description of item in {category} category</p>
+                </div>
+            </div>
+        </div>
+        """
+        
+        return self._wrap_in_html_template(
+            title=f"{category.title()} - {self.config.website_type.title()} Site",
+            content=content,
+            include_navigation=True
+        )
+    
+    def _generate_generic_page(self, path: str) -> str:
+        """Generate a generic page for unknown paths."""
+        content = f"""
+        <div class="generic-page">
+            <h1>Page: {path}</h1>
+            <p>This is a generic page for path: {path}</p>
+        </div>
+        """
+        
+        return self._wrap_in_html_template(
+            title=f"Page {path} - {self.config.website_type.title()} Site",
+            content=content,
+            include_navigation=True
+        )
+    
     def _generate_ecommerce_content(self, page_type: str, **kwargs) -> str:
         """Generate e-commerce website content."""
         if page_type == "homepage":
@@ -204,6 +294,123 @@ class MockWebsite:
     def _generate_social_content(self, page_type: str, **kwargs) -> str:
         """Generate social media website content."""
         return "<div class='social'>Social content</div>"
+    
+    def _generate_product_card(self, item_id: int) -> str:
+        """Generate a product card for e-commerce sites."""
+        return f"""
+        <div class="product-card" data-product-id="{item_id}">
+            <img src="/images/product{item_id}.jpg" alt="Product {item_id}">
+            <h3><a href="/product/{item_id}">Product {item_id}</a></h3>
+            <p class="price">${19.99 + item_id * 10}</p>
+            <p class="rating">★★★★☆ ({4.0 + (item_id % 10) / 10:.1f}/5)</p>
+            <button class="add-to-cart" data-product-id="{item_id}">Add to Cart</button>
+        </div>
+        """
+    
+    def _generate_article_card(self, item_id: int) -> str:
+        """Generate an article card for news sites."""
+        return f"""
+        <article class="story-card" data-article-id="{item_id}">
+            <h3><a href="/article/{item_id}">Breaking News Story {item_id}</a></h3>
+            <p class="summary">This is a summary of news story {item_id}...</p>
+            <p class="meta">By Reporter {item_id} | {item_id} hours ago</p>
+        </article>
+        """
+    
+    def _generate_blog_card(self, item_id: int) -> str:
+        """Generate a blog post card."""
+        return f"""
+        <article class="post-card" data-post-id="{item_id}">
+            <h3><a href="/post/{item_id}">Blog Post {item_id}</a></h3>
+            <p class="excerpt">This is an excerpt from blog post {item_id}...</p>
+            <p class="meta">Published {item_id} days ago</p>
+        </article>
+        """
+    
+    def _generate_generic_card(self, item_id: int) -> str:
+        """Generate a generic item card."""
+        return f"""
+        <div class="item-card" data-item-id="{item_id}">
+            <h3><a href="/item/{item_id}">Item {item_id}</a></h3>
+            <p>Description of item {item_id}</p>
+        </div>
+        """
+    
+    def _generate_product_detail(self, item_id: str) -> str:
+        """Generate detailed product page content."""
+        return f"""
+        <div class="product-detail" data-product-id="{item_id}">
+            <h1>Product {item_id}</h1>
+            <div class="product-info">
+                <img src="/images/product{item_id}.jpg" alt="Product {item_id}">
+                <div class="details">
+                    <p class="price">${19.99 + int(item_id) * 10}</p>
+                    <p class="rating">★★★★☆ ({4.0 + (int(item_id) % 10) / 10:.1f}/5)</p>
+                    <p class="description">Detailed description of product {item_id}...</p>
+                    <button class="add-to-cart" data-product-id="{item_id}">Add to Cart</button>
+                </div>
+            </div>
+        </div>
+        """
+    
+    def _generate_article_detail(self, item_id: str) -> str:
+        """Generate detailed article page content."""
+        return f"""
+        <article class="article-detail" data-article-id="{item_id}">
+            <h1>Breaking News Story {item_id}</h1>
+            <p class="meta">By Reporter {item_id} | {item_id} hours ago</p>
+            <div class="article-content">
+                <p>This is the full content of news story {item_id}...</p>
+                <p>More detailed information about the story...</p>
+            </div>
+        </article>
+        """
+    
+    def _generate_blog_detail(self, item_id: str) -> str:
+        """Generate detailed blog post content."""
+        return f"""
+        <article class="blog-detail" data-post-id="{item_id}">
+            <h1>Blog Post {item_id}</h1>
+            <p class="meta">Published {item_id} days ago</p>
+            <div class="post-content">
+                <p>This is the full content of blog post {item_id}...</p>
+                <p>More detailed blog content...</p>
+            </div>
+        </article>
+        """
+    
+    def _generate_generic_detail(self, item_id: str) -> str:
+        """Generate generic item detail content."""
+        return f"""
+        <div class="item-detail" data-item-id="{item_id}">
+            <h1>Item {item_id}</h1>
+            <div class="item-content">
+                <p>Detailed information about item {item_id}...</p>
+            </div>
+        </div>
+        """
+    
+    def _generate_pagination(self, current_page: int) -> str:
+        """Generate pagination HTML."""
+        pagination_html = ['<div class="pagination">']
+        
+        # Previous link
+        if current_page > 1:
+            pagination_html.append(f'<a href="/page/{current_page - 1}" class="prev">Previous</a>')
+        
+        # Page numbers
+        for page in range(max(1, current_page - 2), min(self.config.num_pages + 1, current_page + 3)):
+            if page == current_page:
+                pagination_html.append(f'<span class="current">{page}</span>')
+            else:
+                pagination_html.append(f'<a href="/page/{page}">{page}</a>')
+        
+        # Next link
+        if current_page < self.config.num_pages:
+            pagination_html.append(f'<a href="/page/{current_page + 1}" class="next">Next</a>')
+        
+        pagination_html.append('</div>')
+        return ''.join(pagination_html)
     
     def _wrap_in_html_template(self, title: str, content: str, include_navigation: bool = True) -> str:
         """Wrap content in a complete HTML template."""

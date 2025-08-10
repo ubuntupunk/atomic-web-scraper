@@ -445,7 +445,7 @@ class TestAtomicScraperTool:
         
         info = tool.get_tool_info()
         
-        assert info['name'] == 'AtomicScraperTool'
+        assert info['name'] == 'Atomic Scraper Tool'
         assert info['version'] == '1.0.0'
         assert 'description' in info
         assert info['config']['base_url'] == 'https://test.com'

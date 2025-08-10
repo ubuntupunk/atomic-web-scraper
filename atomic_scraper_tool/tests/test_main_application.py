@@ -783,7 +783,7 @@ class TestMainFunction:
         main()
         
         # Verify app was created and run
-        mock_app_class.assert_called_once_with(config_path=None)
+        mock_app_class.assert_called_once_with(config_path=None, client=None, demo_mode=False)
         mock_app.run.assert_called_once()
     
     @patch('atomic_scraper_tool.main.AtomicScraperApp')
@@ -798,7 +798,7 @@ class TestMainFunction:
         main()
         
         # Verify app was created with config path
-        mock_app_class.assert_called_once_with(config_path='test.json')
+        mock_app_class.assert_called_once_with(config_path='test.json', client=None, demo_mode=False)
         
         # Verify debug mode was enabled
         assert mock_app.debug_mode is True
