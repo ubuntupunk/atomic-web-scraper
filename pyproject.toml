@@ -6,7 +6,7 @@ authors = ["Atomic Agents Team"]
 readme = "README.md"
 
 [tool.poetry.scripts]
-atomic-scraper = "atomic_scraper_tool.main:main"
+atomic-scraper = "main:main"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"

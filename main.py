@@ -25,9 +25,9 @@ from rich import box
 from atomic_agents.agents.base_agent import BaseAgentConfig
 from atomic_agents.lib.components.agent_memory import AgentMemory
 
-from .agents.scraper_planning_agent import AtomicScraperPlanningAgent, AtomicScraperAgentInputSchema
-from .tools.atomic_scraper_tool import AtomicScraperTool, AtomicScraperInputSchema
-from .config.scraper_config import AtomicScraperConfig
+from atomic_scraper_tool.agents.scraper_planning_agent import AtomicScraperPlanningAgent, AtomicScraperAgentInputSchema
+from atomic_scraper_tool.tools.atomic_scraper_tool import AtomicScraperTool, AtomicScraperInputSchema
+from atomic_scraper_tool.config.scraper_config import AtomicScraperConfig
 
 
 class AtomicScraperApp:
@@ -609,7 +609,7 @@ Type your scraping requests naturally, like:
         """Initialize planning agent with injected client (orchestration mode)."""
         try:
             # Import planning agent components
-            from .agents.scraper_planning_agent import AtomicScraperPlanningAgent
+            from atomic_scraper_tool.agents.scraper_planning_agent import AtomicScraperPlanningAgent
             from atomic_agents.agents.base_agent import BaseAgentConfig
             
             # Create agent config with injected client

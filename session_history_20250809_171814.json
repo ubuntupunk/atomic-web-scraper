@@ -1,0 +1,32 @@
+[
+  {
+    "timestamp": "2025-08-09T16:47:57.962326",
+    "request": "Scrape product listings with prices and ratings",
+    "url": "https://example-store.com/products",
+    "planning_result": {
+      "strategy": "list_scraping"
+    },
+    "scraping_summary": "Successfully scraped 25 product listings",
+    "items_scraped": 25
+  },
+  {
+    "timestamp": "2025-08-09T17:02:57.962352",
+    "request": "Extract news articles from homepage",
+    "url": "https://news-site.com",
+    "planning_result": {
+      "strategy": "article_extraction"
+    },
+    "scraping_summary": "Extracted 12 news articles with metadata",
+    "items_scraped": 12
+  },
+  {
+    "timestamp": "2025-08-09T17:12:57.962356",
+    "request": "Get restaurant information with ratings",
+    "url": "https://restaurant-directory.com/search",
+    "planning_result": {
+      "strategy": "directory_scraping"
+    },
+    "scraping_summary": "Found 8 restaurants with complete data",
+    "items_scraped": 8
+  }
+]
