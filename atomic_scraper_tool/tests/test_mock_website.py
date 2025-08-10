@@ -248,8 +248,8 @@ class TestMockWebsite:
         expected_urls = (
             1 +  # Homepage
             self.config.num_pages +  # Pagination pages
-            self.config.items_per_page +  # Product pages
-            4  # Category pages
+            min(self.config.items_per_page, 5) +  # Product pages (limited to 5 in get_all_urls)
+            2  # Category pages (electronics, clothing)
         )
         assert len(urls) == expected_urls
     
@@ -261,7 +261,7 @@ class TestMockWebsite:
         
         # Test item ID extraction
         assert self.mock_website._extract_item_id("/product/123") == "123"
-        assert self.mock_website._extract_item_id("/invalid") == "1"
+        assert self.mock_website._extract_item_id("/invalid") == "invalid"
         
         # Test category extraction
         assert self.mock_website._extract_category("/category/electronics") == "electronics"

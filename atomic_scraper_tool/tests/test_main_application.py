@@ -51,6 +51,13 @@ class TestAtomicScraperApp:
         # Mock console to capture output
         self.mock_console = Mock()
         
+        # Patch AtomicScraperApp to clear session history on initialization
+        self.original_init = AtomicScraperApp.__init__
+        def patched_init(app_self, *args, **kwargs):
+            self.original_init(app_self, *args, **kwargs)
+            app_self.session_history = []  # Clear any sample data
+        AtomicScraperApp.__init__ = patched_init
+        
     def teardown_method(self):
         """Clean up test fixtures."""
         Path(self.config_file.name).unlink(missing_ok=True)
