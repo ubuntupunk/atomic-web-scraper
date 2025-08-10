@@ -56,6 +56,9 @@ class AtomicScraperApp:
         self.injected_client = client
         self.demo_mode = demo_mode
         
+        # Validate model provider before initializing components
+        self._validate_model_provider()
+        
         # Initialize components
         self.planning_agent = None
         self.scraper_tool = None
@@ -1864,6 +1867,62 @@ ANTHROPIC_API_KEY=your-anthropic-key-here
             self.console.print(f"[red]Invalid JSON format in '{filename}'.[/red]")
         except Exception as e:
             self.console.print(f"[red]Import failed: {e}[/red]")
+
+    def _validate_model_provider(self) -> None:
+        """Validate that a model provider is configured."""
+        if self.injected_client is None and not self.demo_mode and not self._has_model_provider_config():
+            error_msg = """
+[bold red]Error: No AI model provider configured![/bold red]
+
+The Atomic Scraper Tool requires an AI model provider to function. Please configure one of the following:
+
+[bold yellow]Option 1: Environment Variables[/bold yellow]
+Set one of these environment variable sets:
+
+• OpenAI: OPENAI_API_KEY
+• Anthropic: ANTHROPIC_API_KEY  
+• Google: GOOGLE_API_KEY
+• Azure OpenAI: AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT
+
+[bold yellow]Option 2: Demo Mode[/bold yellow]
+Run with --demo-mode flag to use mock responses:
+  atomic-scraper --demo-mode
+
+[bold yellow]Option 3: Configuration File[/bold yellow]
+Create a config file with model provider settings and use:
+  atomic-scraper --config your-config.json
+
+For more information, see the documentation or run:
+  atomic-scraper --help
+"""
+            self.console.print(error_msg)
+            raise ConfigurationError("No AI model provider configured. Please set API keys or use --demo-mode.")
+
+    def _has_model_provider_config(self) -> bool:
+        """Check if model provider is configured via environment variables or config."""
+        import os
+        
+        # Check environment variables for common AI providers
+        env_keys = [
+            'OPENAI_API_KEY',
+            'ANTHROPIC_API_KEY', 
+            'GOOGLE_API_KEY',
+            'AZURE_OPENAI_API_KEY',
+            'COHERE_API_KEY',
+            'HUGGINGFACE_API_TOKEN'
+        ]
+        
+        for key in env_keys:
+            if os.getenv(key):
+                return True
+        
+        # Check if config has model provider settings
+        if hasattr(self, 'config') and self.config:
+            agent_config = self.config.get('agent', {})
+            if agent_config.get('api_key') or agent_config.get('model'):
+                return True
+        
+        return False
 
 
 def main():
