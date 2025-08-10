@@ -341,14 +341,29 @@ class MockWebsite:
         return f"""
         <div class="product-detail" data-product-id="{item_id}">
             <h1>Product {item_id}</h1>
+            <div class="product-images">
+                <img src="/images/product{item_id}.jpg" alt="Product {item_id}" class="main-image">
+                <div class="thumbnail-gallery">
+                    <img src="/images/product{item_id}_thumb1.jpg" alt="Product {item_id} view 1">
+                    <img src="/images/product{item_id}_thumb2.jpg" alt="Product {item_id} view 2">
+                </div>
+            </div>
             <div class="product-info">
-                <img src="/images/product{item_id}.jpg" alt="Product {item_id}">
                 <div class="details">
                     <p class="price">${19.99 + int(item_id) * 10}</p>
                     <p class="rating">★★★★☆ ({4.0 + (int(item_id) % 10) / 10:.1f}/5)</p>
                     <p class="description">Detailed description of product {item_id}...</p>
                     <button class="add-to-cart" data-product-id="{item_id}">Add to Cart</button>
                 </div>
+            </div>
+            <div class="specifications">
+                <h3>Specifications</h3>
+                <ul>
+                    <li>Brand: Example Brand</li>
+                    <li>Model: Product-{item_id}</li>
+                    <li>Weight: {1.5 + int(item_id) * 0.1:.1f} lbs</li>
+                    <li>Dimensions: {10 + int(item_id)}x{8 + int(item_id)}x{2 + int(item_id)} inches</li>
+                </ul>
             </div>
         </div>
         """
@@ -414,6 +429,14 @@ class MockWebsite:
     
     def _wrap_in_html_template(self, title: str, content: str, include_navigation: bool = True) -> str:
         """Wrap content in a complete HTML template."""
+        navigation_html = ""
+        if include_navigation and self.config.include_navigation:
+            navigation_html = self._generate_navigation()
+        
+        metadata_html = ""
+        if self.config.include_metadata:
+            metadata_html = self._generate_metadata(title)
+        
         return f"""<!DOCTYPE html>
 <html lang="{self.config.language}">
 <head>
@@ -421,6 +444,8 @@ class MockWebsite:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
     <meta name="description" content="Mock website for testing">
+    <meta name="keywords" content="test, mock, website, scraping">
+    {metadata_html}
     <style>
         body {{ font-family: Arial, sans-serif; margin: 0; padding: 0; }}
         .container {{ max-width: 1200px; margin: 0 auto; padding: 20px; }}
@@ -428,14 +453,69 @@ class MockWebsite:
         .product-card {{ border: 1px solid #ddd; padding: 15px; }}
         .price {{ font-weight: bold; color: #007cba; }}
         .rating {{ color: #ffa500; }}
+        .navigation {{ background: #f8f9fa; padding: 10px 0; margin-bottom: 20px; }}
+        .navigation ul {{ list-style: none; margin: 0; padding: 0; display: flex; }}
+        .navigation li {{ margin-right: 20px; }}
+        .navigation a {{ text-decoration: none; color: #333; }}
     </style>
 </head>
 <body>
+    {navigation_html}
     <div class="container">
         {content}
     </div>
 </body>
 </html>"""
+    
+    def _generate_navigation(self) -> str:
+        """Generate navigation menu HTML."""
+        nav_items = []
+        if self.config.website_type == WebsiteType.ECOMMERCE:
+            nav_items = [
+                ('/', 'Home'),
+                ('/products', 'Products'),
+                ('/categories', 'Categories'),
+                ('/about', 'About'),
+                ('/contact', 'Contact')
+            ]
+        elif self.config.website_type == WebsiteType.NEWS:
+            nav_items = [
+                ('/', 'Home'),
+                ('/politics', 'Politics'),
+                ('/sports', 'Sports'),
+                ('/technology', 'Technology'),
+                ('/about', 'About')
+            ]
+        else:
+            nav_items = [
+                ('/', 'Home'),
+                ('/about', 'About'),
+                ('/contact', 'Contact')
+            ]
+        
+        nav_links = []
+        for href, text in nav_items:
+            nav_links.append(f'<li><a href="{href}">{text}</a></li>')
+        
+        return f"""
+        <nav class="navigation">
+            <div class="container">
+                <ul>
+                    {''.join(nav_links)}
+                </ul>
+            </div>
+        </nav>
+        """
+    
+    def _generate_metadata(self, title: str) -> str:
+        """Generate additional metadata tags."""
+        return f"""
+        <meta property="og:title" content="{title}">
+        <meta property="og:description" content="Mock website for testing web scraping">
+        <meta property="og:type" content="website">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:title" content="{title}">
+        """
     
     def _simulate_error(self, html: str) -> str:
         """Simulate various types of errors in HTML."""
