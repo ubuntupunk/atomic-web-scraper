@@ -49,7 +49,6 @@ Next-generation intelligent web scraping tool built with the Atomic Agents frame
 
 ```bash
 # Using Poetry (recommended)
-cd atomic_scraper_tool
 poetry install
 
 # Or using pip
