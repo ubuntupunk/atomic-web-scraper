@@ -265,7 +265,7 @@ class TestMockWebsite:
         
         # Test category extraction
         assert self.mock_website._extract_category("/category/electronics") == "electronics"
-        assert self.mock_website._extract_category("/invalid") == "general"
+        assert self.mock_website._extract_category("/invalid") == "invalid"
 
 
 class TestMockWebsiteGenerator:

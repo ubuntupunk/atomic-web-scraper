@@ -354,6 +354,11 @@ class ErrorHandler:
         
         if isinstance(error, RateLimitError):
             return True
+        elif isinstance(error, NetworkError):
+            # Don't retry client errors (4xx status codes)
+            if hasattr(error, 'status_code') and error.status_code and 400 <= error.status_code < 500:
+                return False
+            return True
         
         # Don't retry configuration or validation errors
         if isinstance(error, (ConfigurationError, ValidationError)):
