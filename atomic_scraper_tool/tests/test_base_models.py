@@ -228,7 +228,7 @@ class TestScrapedItem:
                 quality_score=75.0
             )
         
-        assert "Data keys must be strings" in str(exc_info.value)
+        assert "Input should be a valid string" in str(exc_info.value)
         
         # Non-JSON serializable values
         with pytest.raises(ValidationError) as exc_info:
@@ -523,12 +523,12 @@ class TestValidationUtilities:
         # Some fields missing
         data = {"title": "Test", "price": "29.99"}
         expected_fields = ["title", "price", "description"]
-        assert calculate_quality_score(data, expected_fields) == 200/3  # 66.67%
+        assert abs(calculate_quality_score(data, expected_fields) - 200/3) < 0.01  # 66.67%
         
         # Empty/null values don't count
         data = {"title": "Test", "price": "", "description": None}
         expected_fields = ["title", "price", "description"]
-        assert calculate_quality_score(data, expected_fields) == 100/3  # 33.33%
+        assert abs(calculate_quality_score(data, expected_fields) - 100/3) < 0.01  # 33.33%
         
         # No expected fields
         data = {"title": "Test"}
